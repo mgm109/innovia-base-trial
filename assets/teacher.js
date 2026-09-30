@@ -1,0 +1,91 @@
+const api = window.Innovia;
+const message = document.getElementById('message');
+const form = document.getElementById('login');
+const content = document.getElementById('teacher-content');
+const passwordForm = document.getElementById('password-change');
+const passwordPanel = document.getElementById('password-settings');
+const passwordMessage = document.getElementById('password-message');
+const passwordButton = document.getElementById('change-password-button');
+let changingPassword = false;
+let visible = false;
+function tell(text) { message.textContent = text; }
+function passwordTell(text, error = false) {
+  passwordMessage.textContent = text;
+  passwordMessage.classList.toggle('error', error);
+}
+function clearPasswordForm() {
+  passwordForm.reset();
+  passwordTell('');
+  passwordPanel.open = false;
+}
+async function status() {
+  const state = await api.rpc('innovia_settings', {}, 'teacher');
+  visible = state.visible;
+  content.hidden = !state.teacher;
+  form.hidden = state.teacher;
+  passwordButton.disabled = !state.teacher || changingPassword;
+  if (!state.teacher) clearPasswordForm();
+  document.getElementById('network-state').textContent = visible ? '公開中' : '非公開';
+  document.getElementById('toggle').textContent = visible ? '非公開にする' : '公開する';
+  if (!state.teacher && (await api.client('teacher').auth.getSession()).data.session) tell('ログインできましたが、先生の権限がまだ登録されていません。準備ガイドの「先生を登録する」を確認してください。');
+}
+form.onsubmit = async event => {
+  event.preventDefault(); const button = form.querySelector('button'); button.disabled = true; tell('');
+  try {
+    const { error } = await api.client('teacher').auth.signInWithPassword({email: form.elements.email.value, password: form.elements.password.value});
+    form.elements.password.value = '';
+    if (error) throw Error('ログインできません。メールアドレス・パスワードと、先生用の登録を確認してください。');
+    await status();
+  } catch (error) { tell(error.message); } finally { button.disabled = false; }
+};
+document.getElementById('toggle').onclick = async event => {
+  event.target.disabled = true;
+  try { await api.rpc('innovia_settings', { p_visible: !visible }, 'teacher'); await status(); tell('公開設定を保存しました。'); }
+  catch (error) { tell(error.message); } finally { event.target.disabled = false; }
+};
+passwordForm.onsubmit = async event => {
+  event.preventDefault();
+  if (changingPassword || passwordButton.disabled) return;
+  const currentPassword = passwordForm.elements.currentPassword.value;
+  const newPassword = passwordForm.elements.newPassword.value;
+  const confirmation = passwordForm.elements.confirmPassword.value;
+  passwordTell('');
+  if (!currentPassword) { passwordTell('現在のパスワードを入力してください。', true); return; }
+  if (newPassword.length < 8) { passwordTell('新しいパスワードは8文字以上で入力してください。', true); return; }
+  if (newPassword !== confirmation) { passwordTell('新しいパスワードと確認用の入力が一致していません。', true); return; }
+  if (newPassword === currentPassword) { passwordTell('現在とは違う新しいパスワードを入力してください。', true); return; }
+  changingPassword = true;
+  passwordButton.disabled = true;
+  document.getElementById('logout').disabled = true;
+  passwordTell('パスワードを変更しています…');
+  try {
+    const state = await api.rpc('innovia_settings', {}, 'teacher');
+    if (!state.teacher) { await status(); throw Error('先生としてログインし直してください。'); }
+    const db = api.client('teacher');
+    const session = await db.auth.getSession();
+    const account = session.data.session?.user;
+    if (session.error || !account?.email || account.is_anonymous) throw Error('先生としてログインし直してください。');
+    // Verify the current password and renew authentication for this same account.
+    const verified = await db.auth.signInWithPassword({ email: account.email, password: currentPassword });
+    if (verified.error) throw Error('現在のパスワードを確認してください。時間をおいて再度お試しいただく場合もあります。');
+    if (verified.data.user?.id !== account.id) throw Error('先生としてログインし直してください。');
+    const { error } = await db.auth.updateUser({ password: newPassword, current_password: currentPassword });
+    if (error) {
+      if (error.code === 'weak_password') throw Error('新しいパスワードが条件を満たしていません。文字数を増やし、英字・数字・記号を組み合わせてください。');
+      if (error.code === 'same_password') throw Error('現在とは違う新しいパスワードを入力してください。');
+      if (['reauthentication_needed', 'reauthentication_not_valid', 'session_not_found', 'bad_jwt'].includes(error.code)) throw Error('ログアウトして先生としてログインし直し、もう一度変更してください。');
+      throw Error('パスワードを変更できませんでした。接続を確認し、時間をおいてもう一度お試しください。');
+    }
+    passwordTell('パスワードを変更しました。次回から新しいパスワードでログインしてください。');
+  } catch (error) {
+    passwordTell(error instanceof Error ? error.message : '変更できませんでした。もう一度お試しください。', true);
+  } finally {
+    passwordForm.reset();
+    changingPassword = false;
+    passwordButton.disabled = content.hidden;
+    document.getElementById('logout').disabled = false;
+  }
+};
+document.getElementById('logout').onclick = async () => { clearPasswordForm(); await api.client('teacher').auth.signOut(); await status(); tell('ログアウトしました。'); };
+if (api.configured()) status().catch(error => tell(error.message));
+else { form.querySelector('button').disabled = true; tell('この版は接続設定を準備中です。今の公開版は引き続き使えます。'); }

@@ -1,0 +1,4 @@
+@import "tailwindcss" source(none);
+@source "./index.html";
+@source "./app.js";
+@theme { --color-darkbg: #0f172a; --color-canvasbg: #1e293b; --color-wireActive: #06b6d4; --color-wireInactive: #475569; --color-wireHover: #f43f5e; }

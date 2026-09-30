@@ -1,0 +1,15 @@
+const app=document.getElementById('game');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let cases=[],step=0,answers=[],selected=null;
+function answer(choice){
+ if(!Number.isInteger(choice)||!cases[step]||choice<0||choice>=cases[step].choices.length||selected!==null)throw Error('回答できる選択肢を選んでください。');
+ selected=choice;answers.push(choice);render();return {correct:choice===cases[step].correct,explanation:cases[step].reason};
+}
+function render(){
+ if(step===cases.length){const score=answers.filter((v,i)=>v===cases[i].correct).length;app.innerHTML=`<section class="panel" aria-live="polite"><span class="eyebrow">調査完了</span><h2>結果を振り返ろう</h2><div class="result-score">${score} / ${cases.length} 問</div><p class="lead">判断の根拠まで説明できるか、もう一度考えてみよう。</p><button class="button" id="retry">もう一度挑戦</button></section>`;document.getElementById('retry').onclick=()=>{step=0;answers=[];selected=null;render()};return;}
+ const item=cases[step];app.innerHTML=`<section class="panel"><div class="question-index">相談 ${step+1} / ${cases.length}</div><h2>${esc(item.title)}</h2><p class="lead">${esc(item.clue)}</p><p><strong>最初に疑うべきところは？</strong></p><div role="group" aria-label="原因の選択肢">${item.choices.map((choice,i)=>`<button data-choice="${i}" ${selected!==null?'disabled':''} class="choice ${selected!==null?(i===item.correct?'correct':i===selected?'wrong':''):''}">${esc(choice)}</button>`).join('')}</div>${selected!==null?`<div aria-live="polite"><div class="feedback"><strong>${selected===item.correct?'正解！':'惜しい！'}</strong><br>${esc(item.reason)}</div><button class="button" id="next">${step===cases.length-1?'結果を見る':'次の相談へ →'}</button></div>`:''}</section>`;
+ app.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>answer(Number(b.dataset.choice)));
+ if(selected!==null)document.getElementById('next').onclick=()=>{step++;selected=null;render()};
+}
+(async()=>{try{cases=await window.Innovia.rpc('innovia_network');if(cases.length!==3)throw Error('設問を準備中です。');render();}catch(e){app.textContent=e.message;}})();
+if(document.modelContext?.registerTool){const controller=new AbortController();window.addEventListener('pagehide',()=>controller.abort(),{once:true});Promise.resolve(document.modelContext.registerTool({name:'answer_network_case',title:'ネットワークの原因を回答',description:'表示中の相談について選択肢の番号を回答する。番号は0から始まる。',inputSchema:{type:'object',properties:{choice:{type:'integer',minimum:0,maximum:2}},required:['choice'],additionalProperties:false},annotations:{readOnlyHint:false},execute:input=>answer(input.choice)},{signal:controller.signal})).catch(()=>{});}

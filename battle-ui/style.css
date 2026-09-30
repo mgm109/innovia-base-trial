@@ -4,3 +4,24 @@
 @media(min-width:1000px){body.host main:has(.ranking){display:grid;grid-template-columns:minmax(0,2.2fr) minmax(260px,1fr);gap:24px}body.host main:has(.ranking)>.sound{grid-column:1/-1;margin-bottom:0}body.host main:has(.ranking) .question h1{font-size:36px}body.host main:has(.ranking) .circuit{max-height:180px}body.host main:has(.ranking) .answer{min-height:76px;font-size:28px}body.host main:has(.ranking) .panel{padding:16px}body.host main:has(.ranking) .panel h2{font-size:24px}body.host main:has(.ranking) .panel p{font-size:18px;margin:8px 0}body.host main:has(.ranking) .progress{margin:10px 0 18px}body.host main:has(.ranking) .feedback{margin:16px 0}body.host main:has(.ranking) .ranking{margin:0}body.host main:has(.ranking) .ranking h2{font-size:26px}body.host main:has(.ranking) .rankrow{font-size:18px;gap:10px;padding:10px}body.host main:has(.ranking) .rankrow .face{font-size:26px}}
 
 .sound-help{font-size:14px;margin:-12px 0 24px;line-height:1.6}.sound{margin-bottom:20px}#audio-status{font-size:14px;color:var(--lime)}@media(min-width:1000px){body.host main:has(.ranking)>.sound-help{grid-column:1/-1;margin:0}}
+
+/* Keep teacher rankings and progression inside one viewport. */
+body.ranking-screen{height:100vh;height:100dvh;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+body.ranking-screen>header{flex:none;padding:12px 4vw}
+body.ranking-screen>footer{display:none}
+body.ranking-screen>main{flex:1;min-height:0;width:100%;margin:0 auto;padding:16px 4vw;display:flex}
+.ranking-stage{width:100%;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:12px}
+.ranking-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ranking-heading h1{font-size:clamp(25px,3vw,40px);margin:0;letter-spacing:0}
+.ranking-heading>span{color:var(--muted);white-space:nowrap}
+.ranking-list{min-height:0;display:grid;grid-auto-flow:column;grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(var(--rank-rows-one),minmax(36px,1fr));gap:6px 18px;overflow:auto;padding:2px}
+.ranking-list .rankrow{min-width:0;margin:0;padding:4px 12px;gap:12px;font-size:clamp(15px,1.65vw,23px);border-radius:10px}
+.ranking-list .rankrow>b:first-child{min-width:1.5em;text-align:center}
+.ranking-list .rankrow .face{font-size:clamp(22px,2.1vw,32px);flex:none}
+.ranking-list .rankrow>span:not(.face){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ranking-list .rankrow>b:last-child{white-space:nowrap}
+.ranking-actions{text-align:center;padding-top:2px}
+.ranking-actions button{width:min(100%,520px);min-height:52px;font-size:clamp(18px,2vw,25px)}
+@media(min-width:900px){.ranking-list{grid-template-columns:repeat(var(--rank-columns-two),minmax(0,1fr));grid-template-rows:repeat(var(--rank-rows-medium),minmax(36px,1fr))}}
+@media(min-width:1200px){.ranking-list{grid-template-columns:repeat(var(--rank-columns-wide),minmax(0,1fr));grid-template-rows:repeat(var(--rank-rows-wide),minmax(36px,1fr))}}
+@media(max-width:600px){body.ranking-screen>header{padding:10px 12px;gap:10px}.ranking-screen .brand{font-size:14px}.ranking-screen .top{font-size:12px}body.ranking-screen>main{padding:12px}.ranking-stage{gap:10px}.ranking-list .rankrow{gap:8px;padding:4px 8px}}

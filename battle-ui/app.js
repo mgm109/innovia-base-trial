@@ -48,21 +48,57 @@ async function poll(){if(polling||!session)return;polling=true;try{const next=aw
 function connect(){clearTimeout(pollTimer);lastView='';poll()}
 function soundControls(){return `<div class="sound"><button id="audio" class="small">音を開始・試聴</button><button id="audio-stop" class="small">音を停止</button>${isHost&&state?.phase==='finished'?'<button id="award-replay" class="small">表彰音をもう一度</button>':''}${isHost&&state?`<label for="bgm">BGM</label><select id="bgm"><option value="game">ゲームショー</option><option value="electro">電子音</option><option value="calm">落ち着いたビート</option><option value="none">BGMなし</option></select>`:''}<label for="volume">音量</label><input id="volume" type="range" min="0" max="1" step="0.01" value="${audio.volume}" aria-label="音量"><span id="audio-status" role="status"></span></div><p class="sound-help">最初に「音を開始・試聴」を押してください。${isHost?'BGMは先生の端末から流れます。表彰ではファンファーレと拍手の音が鳴ります。':'生徒の端末は結果発表の効果音だけ鳴ります。待機中のBGMはありません。'} 聞こえないときは端末・タブのミュートと、スピーカー／HDMIの出力先を確認してください。</p>`}
 function syncSound(){if(!$('audio-status'))return;const playing=audio.enabled&&audio.ctx?.state==='running';$('audio').textContent=playing?'もう一度試聴':audio.enabled?'音を再開・試聴':'音を開始・試聴';$('audio-stop').disabled=!audio.enabled;if($('award-replay'))$('award-replay').disabled=!playing||audio.volume===0;$('audio-status').textContent=audio.volume===0?'音量0（無音）':playing?'音声再生中':audio.enabled?'一時停止中：再開を押してください':'音声未開始';}
-function bindSound(){syncSound();$('audio').onclick=async()=>{const button=$('audio');button.disabled=true;try{await audio.enable();if(isHost&&state?.phase==='finished')audio.award();else audio.effect('rank')}catch(e){notice(e.message||'音を開始できません。端末の音量設定を確認してください。')}finally{button.disabled=false;syncSound()}};$('audio-stop').onclick=()=>audio.stop();$('volume').oninput=e=>audio.setVolume(e.target.value);if($('award-replay'))$('award-replay').onclick=()=>audio.award();if($('bgm')){$('bgm').value=state.bgm;$('bgm').onchange=e=>control('bgm',{bgm:e.target.value})}}
+function bindSound(){syncSound();$('audio').onclick=async()=>{const button=$('audio');button.disabled=true;try{await audio.enable();if(isHost&&state?.phase==='finished'){audio.award();startAwardFireworks()}else audio.effect('rank')}catch(e){notice(e.message||'音を開始できません。端末の音量設定を確認してください。')}finally{button.disabled=false;syncSound()}};$('audio-stop').onclick=()=>audio.stop();$('volume').oninput=e=>audio.setVolume(e.target.value);if($('award-replay'))$('award-replay').onclick=()=>{audio.award();startAwardFireworks()};if($('bgm')){$('bgm').value=state.bgm;$('bgm').onchange=e=>control('bgm',{bgm:e.target.value})}}
 function rows(players,limit=100){return players.slice(0,limit).map(p=>`<div class="rankrow ${p.id===state.me?.id?'mine':''}"><b>${p.rank}</b><span class="face">${esc(p.avatar)}</span><span>${esc(p.name)}</span><b>${p.score.toLocaleString()} <small>pt</small></b></div>`).join('')}
+let stopAwardFireworks=()=>{};
+function startAwardFireworks(){
+ stopAwardFireworks();
+ const canvas=$('award-fireworks'),podium=document.querySelector('.award-stage .podium'),motion=window.matchMedia('(prefers-reduced-motion: reduce)');
+ if(!canvas||!podium||motion.matches)return;
+ const ctx=canvas.getContext('2d');if(!ctx)return;
+ let frame=0,width=0,height=0,lanes=[],rockets=[],sparks=[],side=0,active=true;
+ const started=performance.now();let previous=started,nextLaunch=started;
+ function resize(){
+  const box=canvas.getBoundingClientRect(),pod=podium.getBoundingClientRect(),scale=Math.min(window.devicePixelRatio||1,2);width=box.width;height=box.height;
+  canvas.width=Math.round(width*scale);canvas.height=Math.round(height*scale);ctx.setTransform(scale,0,0,scale,0,0);
+  const left=Math.max(0,pod.left-box.left-10),right=Math.min(width,pod.right-box.left+10);
+  lanes=[{x:0,width:left},{x:right,width:Math.max(0,width-right)}].filter(lane=>lane.width>=55);rockets=[];sparks=[];
+ }
+ function stop(){if(!active)return;active=false;cancelAnimationFrame(frame);window.removeEventListener('resize',resize);motion.removeEventListener('change',stop);ctx.clearRect(0,0,width,height);rockets=[];sparks=[];}
+ stopAwardFireworks=stop;resize();window.addEventListener('resize',resize);motion.addEventListener('change',stop);
+ const colors=['#ffe76a','#7de8ff','#ff8bd1','#adff85'];
+ function clip(lane,draw){ctx.save();ctx.beginPath();ctx.rect(lane.x,0,lane.width,height);ctx.clip();draw();ctx.restore();}
+ function burst(rocket){
+  for(let i=0;i<36;i++){const angle=Math.PI*2*i/36,speed=Math.min(rocket.lane.width*.8,125)*(.7+Math.random()*.3);sparks.push({x:rocket.x,y:rocket.target,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,life:1.1,age:0,color:rocket.color,lane:rocket.lane});}
+ }
+ function draw(now){
+  if(!active)return;const dt=Math.min((now-previous)/1000,.04);previous=now;ctx.clearRect(0,0,width,height);
+  if(now-started<8500&&lanes.length&&now>=nextLaunch){const lane=lanes[side%lanes.length];rockets.push({lane,x:lane.x+lane.width*(.43+Math.random()*.14),from:height-8,target:height*(.32+Math.random()*.25),born:now,color:colors[side%colors.length]});side++;nextLaunch=now+850;}
+  rockets=rockets.filter(rocket=>{const progress=Math.min(1,(now-rocket.born)/550),y=rocket.from+(rocket.target-rocket.from)*progress;
+   clip(rocket.lane,()=>{ctx.strokeStyle=rocket.color;ctx.lineWidth=2;ctx.shadowColor=rocket.color;ctx.shadowBlur=9;ctx.beginPath();ctx.moveTo(rocket.x,y+22);ctx.lineTo(rocket.x,y);ctx.stroke();});
+   if(progress===1){burst(rocket);return false}return true;
+  });
+  sparks=sparks.filter(spark=>{spark.age+=dt;if(spark.age>=spark.life)return false;spark.x+=spark.vx*dt;spark.y+=spark.vy*dt;spark.vx*=Math.pow(.985,dt*60);spark.vy=spark.vy*Math.pow(.985,dt*60)+18*dt;
+   clip(spark.lane,()=>{ctx.globalAlpha=Math.max(0,1-spark.age/spark.life);ctx.fillStyle=spark.color;ctx.shadowColor=spark.color;ctx.shadowBlur=7;ctx.beginPath();ctx.arc(spark.x,spark.y,1.8,0,Math.PI*2);ctx.fill();});return true;
+  });
+  if(now-started>10500&&!rockets.length&&!sparks.length){stop();return;}frame=requestAnimationFrame(draw);
+ }
+ lanes.forEach((lane,i)=>burst({lane,x:lane.x+lane.width/2,target:height*.43,color:colors[i%colors.length]}));
+ frame=requestAnimationFrame(draw);
+}
 function circuit(reveal){return `<svg class="circuit ${reveal?'revealed':''}" role="img" aria-label="A=1とB=0をANDに入力してP。BをNOTに入力してQ。PとQをORに入力してY、ANDに入力してZ。" viewBox="0 0 820 245"><text x="10" y="43">A = 1</text><text x="10" y="133">B = 0</text><path d="M80 36H160V56H210 M80 125H130V84H210 M130 125V182H210 M310 70H390V56H505 M310 182H430V85H505 M390 70V168H505 M430 182V196H505 M605 70H700 M605 182H700"/><circle cx="130" cy="125" r="6" fill="#fff"/><circle cx="390" cy="70" r="6" fill="#fff"/><circle cx="430" cy="182" r="6" fill="#fff"/><rect x="210" y="44" width="100" height="52" rx="12"/><rect x="210" y="156" width="100" height="52" rx="12"/><rect x="505" y="44" width="100" height="52" rx="12"/><rect x="505" y="156" width="100" height="52" rx="12"/><text x="238" y="78">AND</text><text x="238" y="190">NOT</text><text x="535" y="78">OR</text><text x="530" y="190">AND</text><text x="330" y="49" class="signal">P${reveal?'='+esc(state.reveal?.signals?.p??'?'):''}</text><text x="330" y="225" class="signal">Q${reveal?'='+esc(state.reveal?.signals?.q??'?'):''}</text><text x="705" y="78" class="signal">Y = ${reveal?esc(state.reveal?.signals?.y??'?'):'?'}</text><text x="705" y="190" class="signal">Z = ${reveal?esc(state.reveal?.signals?.z??'?'):'?'}</text></svg>`}
 function render(){
  showCourseTitle();
  document.body.classList.toggle('ranking-screen',isHost&&state.phase==='reveal');
  const view=[state.phase,state.index,state.me?.answer?.choice??'',state.bgm].join(':');
- if(view===lastView){if($('people'))$('people').innerHTML=people();if($('number'))$('number').textContent=state.players.length;if($('answered'))$('answered').textContent=`${state.answered} / ${state.players.length} 人が回答`;if($('start'))$('start').disabled=!state.players.length;return}lastView=view;
+ if(view===lastView){if($('people'))$('people').innerHTML=people();if($('number'))$('number').textContent=state.players.length;if($('answered'))$('answered').textContent=`${state.answered} / ${state.players.length} 人が回答`;if($('start'))$('start').disabled=!state.players.length;return}lastView=view;stopAwardFireworks();
  if(state.phase==='lobby'){
  if(isHost)app.innerHTML=`${soundControls()}<div class="grid"><section class="panel"><div class="eyebrow">${esc(courseTitle())}</div><h1>準備はいい？<br>みんなで挑戦しよう。</h1><div class="row"><div id="qr" class="qr"></div><div><div class="muted">参加PIN</div><div class="pin">${state.pin}</div></div></div><p>QRを読み取るか、参加URLを開いてPINを入力。</p><div id="joinurl" class="url"></div><label for="network">参加サイトのアドレス</label><select id="network">${[...new Set([base,...info.urls])].map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('')}</select><p style="font-size:14px">INNOVIAの「${esc(courseTitle())}」からPINを入力しても参加できます。</p></section><section class="panel"><div class="row between"><h2>エントリー</h2><span><b id="number" class="count">${state.players.length}</b> 人</span></div><div id="people" class="people">${people()}</div><p>${esc(courseTitle())} · 全${state.total}問<br>正解10点 ＋ 速さで0〜10点（最大20点）<br>不正解・未回答は0点</p><button id="start" ${!state.players.length?'disabled':''}>バトルを開始 ▶</button><p>全員が参加したら開始。開始後の新規参加はできません。全員回答または時間切れで自動的に正解を発表します。次の問題へは先生が進めます。</p></section></div>`;
  else{const me=state.players.find(p=>p.id===state.me.id);app.innerHTML=`${soundControls()}<section class="waiting panel"><div class="eyebrow">${esc(courseTitle())} · 全${state.total}問</div><div class="face">${esc(me.avatar)}</div><h1>${esc(me.name)}</h1><h2>参加できました！</h2><p>先生がスタートするまで待ってね。<br>この画面を開いたままにしておこう。</p><span class="badge">ROOM ${state.pin}</span></section>`}
  bindSound();if(isHost){$('network').value=base;$('network').onchange=e=>{base=e.target.value;drawQR()};drawQR();$('start').onclick=()=>control('start')}return;
  }
  if(state.phase==='finished'){
- const top=state.players.slice(0,3);app.innerHTML=`${soundControls()}<div class="question"><div class="eyebrow">${esc(courseTitle())} · 結果発表</div><h1>最後まで、ナイスチャレンジ！</h1><p>同じ点数は同順位です。</p><div class="podium">${[top[1],top[0],top[2]].filter(Boolean).map(p=>`<div class="pod ${p.rank===1?'first':''}"><div class="face">${esc(p.avatar)}</div><h2>${p.rank===1?'🥇':p.rank===2?'🥈':'🥉'} ${p.rank}位</h2><h2>${esc(p.name)}</h2><b>${p.score.toLocaleString()} pt</b></div>`).join('')}</div></div><section class="panel"><h2>最終ランキング</h2>${rows(state.players)}</section>${isHost?'<p>もう一度遊ぶときは先生画面を新しいタブで開き、新しいルームを作成してください。</p>':''}`;bindSound();return;
+ const top=state.players.slice(0,3);app.innerHTML=`${soundControls()}<div class="question award-stage"><canvas id="award-fireworks" class="award-fireworks" aria-hidden="true"></canvas><div class="eyebrow">${esc(courseTitle())} · 結果発表</div><h1>最後まで、ナイスチャレンジ！</h1><p>同じ点数は同順位です。</p><div class="podium">${[top[1],top[0],top[2]].filter(Boolean).map(p=>`<div class="pod ${p.rank===1?'first':''}"><div class="face">${esc(p.avatar)}</div><h2>${p.rank===1?'🥇':p.rank===2?'🥈':'🥉'} ${p.rank}位</h2><h2>${esc(p.name)}</h2><b>${p.score.toLocaleString()} pt</b></div>`).join('')}</div></div><section class="panel"><h2>最終ランキング</h2>${rows(state.players)}</section>${isHost?'<p>もう一度遊ぶときは先生画面を新しいタブで開き、新しいルームを作成してください。</p>':''}`;bindSound();startAwardFireworks();return;
  }
  const q=state.question,revealed=state.phase==='reveal',answered=!!state.me?.answer;
  if(isHost&&revealed){

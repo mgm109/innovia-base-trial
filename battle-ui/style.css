@@ -25,3 +25,9 @@ body.ranking-screen>main{flex:1;min-height:0;width:100%;margin:0 auto;padding:16
 @media(min-width:900px){.ranking-list{grid-template-columns:repeat(var(--rank-columns-two),minmax(0,1fr));grid-template-rows:repeat(var(--rank-rows-medium),minmax(36px,max-content))}}
 @media(min-width:1200px){.ranking-list{grid-template-columns:repeat(var(--rank-columns-wide),minmax(0,1fr));grid-template-rows:repeat(var(--rank-rows-wide),minmax(36px,max-content))}}
 @media(max-width:600px){body.ranking-screen>header{padding:10px 12px;gap:10px}.ranking-screen .brand{font-size:14px}.ranking-screen .top{font-size:12px}body.ranking-screen>main{padding:12px}.ranking-stage{gap:10px}.ranking-list .rankrow{gap:8px;padding:4px 8px}}
+
+.award-stage{position:relative;isolation:isolate}
+.award-stage>:not(.award-fireworks){position:relative;z-index:1}
+.award-fireworks{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+@media(min-width:900px){.award-stage .podium{max-width:min(900px,calc(100% - 144px))}}
+@media(prefers-reduced-motion:reduce){.award-fireworks{display:none}}

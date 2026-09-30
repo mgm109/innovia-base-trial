@@ -8,6 +8,31 @@ const passwordMessage = document.getElementById('password-message');
 const passwordButton = document.getElementById('change-password-button');
 let changingPassword = false;
 let visible = false;
+const passwordVisibility = [];
+for (const input of document.querySelectorAll('input[type="password"]')) {
+  const label = document.querySelector(`label[for="${input.id}"]`).textContent;
+  const row = document.createElement('div');
+  row.className = 'password-field';
+  input.before(row);
+  row.append(input);
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'password-visibility';
+  toggle.setAttribute('aria-controls', input.id);
+  function setVisible(show) {
+    input.type = show ? 'text' : 'password';
+    toggle.textContent = show ? '非表示' : '表示';
+    toggle.setAttribute('aria-label', `${label}を${show ? '非表示にする' : '表示する'}`);
+    toggle.setAttribute('aria-pressed', String(show));
+  }
+  setVisible(false);
+  toggle.onclick = () => setVisible(input.type === 'password');
+  row.append(toggle);
+  passwordVisibility.push({ input, hide: () => setVisible(false) });
+}
+function hidePasswords(target) {
+  for (const field of passwordVisibility) if (target.contains(field.input)) field.hide();
+}
 function tell(text) { message.textContent = text; }
 function passwordTell(text, error = false) {
   passwordMessage.textContent = text;
@@ -15,6 +40,7 @@ function passwordTell(text, error = false) {
 }
 function clearPasswordForm() {
   passwordForm.reset();
+  hidePasswords(passwordForm);
   passwordTell('');
   passwordPanel.open = false;
 }
@@ -30,7 +56,8 @@ async function status() {
   if (!state.teacher && (await api.client('teacher').auth.getSession()).data.session) tell('ログインできましたが、先生の権限がまだ登録されていません。準備ガイドの「先生を登録する」を確認してください。');
 }
 form.onsubmit = async event => {
-  event.preventDefault(); const button = form.querySelector('button'); button.disabled = true; tell('');
+  event.preventDefault(); const button = form.querySelector('.button'); button.disabled = true; tell('');
+  hidePasswords(form);
   try {
     const { error } = await api.client('teacher').auth.signInWithPassword({email: form.elements.email.value, password: form.elements.password.value});
     form.elements.password.value = '';
@@ -81,6 +108,7 @@ passwordForm.onsubmit = async event => {
     passwordTell(error instanceof Error ? error.message : '変更できませんでした。もう一度お試しください。', true);
   } finally {
     passwordForm.reset();
+    hidePasswords(passwordForm);
     changingPassword = false;
     passwordButton.disabled = content.hidden;
     document.getElementById('logout').disabled = false;
@@ -88,4 +116,4 @@ passwordForm.onsubmit = async event => {
 };
 document.getElementById('logout').onclick = async () => { clearPasswordForm(); await api.client('teacher').auth.signOut(); await status(); tell('ログアウトしました。'); };
 if (api.configured()) status().catch(error => tell(error.message));
-else { form.querySelector('button').disabled = true; tell('この版は接続設定を準備中です。今の公開版は引き続き使えます。'); }
+else { form.querySelector('.button').disabled = true; tell('この版は接続設定を準備中です。今の公開版は引き続き使えます。'); }

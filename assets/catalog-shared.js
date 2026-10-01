@@ -14,7 +14,7 @@
     const doc=item.material;
     const headingOnly=item.headingOnly&&!preview;
     const link=document.createElement(headingOnly?'article':'a'); link.className='learning-tile tile-'+(item.builtin?(item.id==='logic'?'battle':item.id):'practice'); link.dataset.material=item.id;
-    if(!headingOnly)link.href=studentUrl(item,preview);else{link.classList.add('is-heading-only');link.setAttribute('aria-label',doc.title+'：準備中・まだ開けません');const badge=document.createElement('span');badge.className='tile-preparing';badge.textContent='準備中・まだ開けません';link.append(badge);}
+    if(!headingOnly)link.href=studentUrl(item,preview);else{link.classList.add('is-heading-only');link.setAttribute('aria-label',doc.title+'：準備中');const badge=document.createElement('span');badge.className='tile-preparing';badge.textContent='準備中';link.append(badge);}
     const head=document.createElement('div'); head.className='tile-head';
     const icon=document.createElement('span'); icon.className='tile-icon'; icon.textContent=doc.icon; icon.setAttribute('aria-hidden','true');
     const category=document.createElement('span'); category.className='tile-category';category.textContent=doc.category;head.append(icon,category);

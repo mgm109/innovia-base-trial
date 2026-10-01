@@ -20,13 +20,18 @@
 .catalog-order-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid #52707b;border-radius:10px;background:#082632}
 .catalog-order-title{display:flex;align-items:center;gap:10px;min-width:0;line-height:1.55}
 .catalog-order-number{color:#c9ec71;font-weight:800;flex:none}
-.catalog-order-buttons{display:flex;gap:6px;flex:none}
+.catalog-order-buttons{display:flex;gap:6px;flex:none;flex-wrap:wrap;align-items:center;justify-content:flex-end}
 .catalog-order-buttons button{min-height:44px;padding:8px 12px;white-space:nowrap}
 .catalog-order-buttons button:disabled{opacity:.4;cursor:default}
 .catalog-order-buttons button:focus-visible{outline:3px solid #c9ec71;outline-offset:2px}
 .catalog-order-title:focus{outline:2px solid #c9ec71;outline-offset:4px}
 .catalog-order-unpublished{display:block;font-size:.8rem;color:#b7ced1;font-weight:400}
-@media(max-width:480px){.catalog-order-row{align-items:flex-start;flex-direction:column}.catalog-order-buttons{align-self:flex-end}}
+.catalog-visibility-buttons{display:flex;gap:4px;margin-left:8px;padding-left:10px;border-left:1px solid #52707b}
+.catalog-order-buttons button.is-current:disabled{background:#c9ec71;border-color:#c9ec71;color:#082632;opacity:1;font-weight:800}
+.catalog-order-title{flex-wrap:wrap}.catalog-order-title strong{min-width:0;overflow-wrap:anywhere}
+.catalog-prototype-link{font-size:.8rem;color:#c9ec71;flex-basis:100%;margin-left:24px}
+.catalog-order-actions{margin-top:0}
+@media(max-width:760px){.catalog-order-row{align-items:flex-start;flex-direction:column}.catalog-order-buttons{align-self:flex-end}.catalog-order-buttons button{padding:8px 9px}.catalog-visibility-buttons{margin-left:2px;padding-left:7px}}
 
 .portal-nav{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0}.portal-nav a{display:inline-block}
 .teacher-materials{display:grid;gap:20px}.teacher-materials .panel{margin:0}.teacher-materials h2{margin-top:0}

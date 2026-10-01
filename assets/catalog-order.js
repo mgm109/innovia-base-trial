@@ -8,7 +8,7 @@ function render(focusId) {
     const title=document.createElement('div');title.className='catalog-order-title';title.tabIndex=-1;
     const number=document.createElement('span');number.className='catalog-order-number';number.textContent=String(index+1);
     const name=document.createElement('strong');name.textContent=item.material.title;
-    if(!item.published||(id==='network'&&!data.networkVisible)){const sub=document.createElement('span');sub.className='catalog-order-unpublished';sub.textContent=item.published?'非公開':'試作（生徒の一覧には出ません）';name.append(sub);}
+    if(!item.published||item.visible===false||(id==='network'&&!data.networkVisible)){const sub=document.createElement('span');sub.className='catalog-order-unpublished';sub.textContent=item.published?'非公開':'試作（生徒の一覧には出ません）';name.append(sub);}
     title.append(number,name);const controls=document.createElement('div');controls.className='catalog-order-buttons';
     for(const [delta,label] of [[-1,'↑ 上へ'],[1,'↓ 下へ']]){const button=document.createElement('button');button.type='button';button.className='ghost';button.textContent=label;button.setAttribute('aria-label',item.material.title+(delta<0?'を上へ':'を下へ'));button.disabled=busy||index+delta<0||index+delta>=order.length;button.onclick=()=>{[order[index],order[index+delta]]=[order[index+delta],order[index]];note.textContent='変更した順番は「順番を保存」で反映されます。';render(id);};controls.append(button);}
     row.append(title,controls);list.append(row);if(focusId===id)title.focus();

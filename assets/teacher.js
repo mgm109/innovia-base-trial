@@ -8,6 +8,14 @@ const passwordMessage = document.getElementById('password-message');
 const passwordButton = document.getElementById('change-password-button');
 let changingPassword = false;
 let visible = false;
+let visibilityBusy = false;
+async function setMaterialVisibility(id,next) {
+  if(visibilityBusy)return;
+  visibilityBusy=true;await loadTeacherMaterials();
+  try{await InnoviaCatalog.api('visibility',{id,visible:next},true);await status();tell(next?'生徒の教材一覧に公開しました。':'生徒の教材一覧を非公開にしました。');}
+  catch(error){tell(error.message);}
+  finally{visibilityBusy=false;await loadTeacherMaterials();}
+}
 async function loadTeacherMaterials() {
   try {
     const data=await InnoviaCatalog.api('list',{},true);
@@ -19,6 +27,11 @@ async function loadTeacherMaterials() {
       let card=existing.get(item.id);
       if(!card){card=document.createElement('section');card.className='panel';card.dataset.material=item.id;const heading=document.createElement('h2');heading.textContent=item.material.title;const description=document.createElement('p');description.className='small-note';description.textContent=item.material.description;const link=document.createElement('a');link.className='button';link.href=InnoviaCatalog.studentUrl(item);link.textContent='教材を開く';card.append(heading,description,link);}
       if(!item.builtin){card.querySelector('h2').textContent=item.material.title;card.querySelector('p').textContent=item.material.description;card.querySelector('a').href=InnoviaCatalog.studentUrl(item);}
+      if(item.id!=='network'){
+        let controls=card.querySelector('.material-visibility');
+        if(!controls){controls=document.createElement('div');controls.className='actions material-visibility';const state=document.createElement('span');state.className='status';const button=document.createElement('button');button.type='button';button.className='ghost';controls.append(state,button);card.append(controls);}
+        const isVisible=item.visible!==false,button=controls.querySelector('button');controls.querySelector('.status').textContent=isVisible?'公開中':'非公開';button.textContent=isVisible?'非公開にする':'公開する';button.setAttribute('aria-label',item.material.title+(isVisible?'を非公開にする':'を公開する'));button.disabled=visibilityBusy;button.onclick=()=>setMaterialVisibility(item.id,!isVisible);
+      }else document.getElementById('toggle').disabled=visibilityBusy;
       next.push(card);
     }
     if(next.some((card,index)=>grid.children[index]!==card))grid.append(...next);
@@ -83,9 +96,7 @@ form.onsubmit = async event => {
   } catch (error) { tell(error.message); } finally { button.disabled = false; }
 };
 document.getElementById('toggle').onclick = async event => {
-  event.target.disabled = true;
-  try { await api.rpc('innovia_settings', { p_visible: !visible }, 'teacher'); await status(); tell('公開設定を保存しました。'); }
-  catch (error) { tell(error.message); } finally { event.target.disabled = false; }
+  await setMaterialVisibility('network',!visible);
 };
 passwordForm.onsubmit = async event => {
   event.preventDefault();
@@ -136,4 +147,4 @@ if (api.configured()) status().catch(error => tell(error.message));
 else { form.querySelector('.button').disabled = true; tell('この版は接続設定を準備中です。今の公開版は引き続き使えます。'); }
 
 window.addEventListener("pageshow",()=>{if(!content.hidden)loadTeacherMaterials();});
-setInterval(()=>{if(!content.hidden&&!document.hidden&&!changingPassword)loadTeacherMaterials();},15000);
+setInterval(()=>{if(!content.hidden&&!document.hidden&&!changingPassword&&!visibilityBusy)loadTeacherMaterials();},15000);

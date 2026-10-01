@@ -30,7 +30,10 @@
   async function teacherGuard() {
     const state=await Innovia.rpc('innovia_settings',{},'teacher');
     if(!state.teacher) { document.getElementById('guard-message').textContent='先生用画面でログインしてください。'; return false; }
-    document.getElementById('workspace').hidden=false;document.getElementById('guard-message').textContent='';return true;
+    document.getElementById('workspace').hidden=false;document.getElementById('guard-message').textContent='';
+    const menu=document.getElementById('teacher-view-links');if(menu)menu.hidden=false;
+    const logout=document.getElementById('logout');if(logout){logout.hidden=false;logout.onclick=async()=>{await Innovia.client('teacher').auth.signOut();location.href=new URL('teacher/',root).href;};}
+    return true;
   }
   window.InnoviaCatalog={api,safeUrl,studentUrl,card,valid,teacherGuard};
 })();

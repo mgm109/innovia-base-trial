@@ -47,3 +47,5 @@
 .catalog-order-buttons{max-width:100%}.catalog-visibility-buttons{flex-wrap:wrap}
 
 .learning-tile.is-heading-only{position:relative;cursor:default;padding-top:52px}.tile-preparing{position:absolute;top:14px;right:14px;max-width:calc(100% - 28px);font-size:.76rem;font-weight:800;line-height:1.5;padding:5px 10px;border-radius:8px;background:#f6df92;color:#29351b}.learning-tile.is-heading-only:hover{transform:none}.catalog-order-buttons{flex-wrap:wrap}
+
+.inline-material-page{max-width:none}.panel.inline-material-area{padding:0;border:0;background:transparent;margin-top:20px}.inline-material{display:block;width:100%;height:1100px;min-height:700px;border:0;border-radius:12px}

@@ -4,6 +4,10 @@ const form = document.getElementById('login');
 const content = document.getElementById('teacher-content');
 const passwordForm = document.getElementById('password-change');
 const passwordPanel = document.getElementById('password-settings');
+const passwordPanelToggle=document.getElementById('password-panel-toggle');
+function setPasswordPanel(open){passwordPanel.hidden=!open;passwordPanelToggle.setAttribute('aria-expanded',String(open));const teacherTab=document.querySelector('#teacher-view-links a');if(open){passwordPanelToggle.setAttribute('aria-current','page');teacherTab.removeAttribute('aria-current');}else{passwordPanelToggle.removeAttribute('aria-current');teacherTab.setAttribute('aria-current','page');}}
+passwordPanelToggle.onclick=()=>setPasswordPanel(passwordPanel.hidden);
+let passwordRouteOpened=false;
 const passwordMessage = document.getElementById('password-message');
 const passwordButton = document.getElementById('change-password-button');
 let changingPassword = false;
@@ -97,7 +101,7 @@ function clearPasswordForm() {
   passwordForm.reset();
   hidePasswords(passwordForm);
   passwordTell('');
-  passwordPanel.open = false;
+  setPasswordPanel(false);
 }
 async function status() {
   const state = await api.rpc('innovia_settings', {}, 'teacher');
@@ -107,7 +111,7 @@ async function status() {
   const viewLinks=document.getElementById('teacher-view-links');if(viewLinks)viewLinks.hidden=!state.teacher;
   passwordButton.disabled = !state.teacher || changingPassword;
   if (!state.teacher) clearPasswordForm();
-  if (state.teacher) await loadTeacherMaterials();
+  if (state.teacher){if(!passwordRouteOpened&&new URLSearchParams(location.search).get('panel')==='password'){setPasswordPanel(true);passwordRouteOpened=true;}await loadTeacherMaterials();}
   if (!state.teacher && (await api.client('teacher').auth.getSession()).data.session) tell('ログインできましたが、先生の権限がまだ登録されていません。準備ガイドの「先生を登録する」を確認してください。');
 }
 form.onsubmit = async event => {

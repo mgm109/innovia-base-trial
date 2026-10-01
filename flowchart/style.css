@@ -15,3 +15,5 @@ button,.button{background:#173946;color:#f5f8f5;border-color:#52707b}button:hove
 @media(max-width:620px){.extra-symbols .tool{margin-top:7px}.edge-editor{width:100%;max-width:none}}
 
 .pointer,.inspector #selection-empty{color:#bad0d3}.edge-editor{max-width:none;margin-top:0;padding:0;border:none}
+
+.diagram-scroll svg g[data-node],.diagram-scroll svg g[data-terminal]{cursor:grab;touch-action:none;user-select:none}.diagram-scroll svg g[data-node]:active,.diagram-scroll svg g[data-terminal]:active{cursor:grabbing}

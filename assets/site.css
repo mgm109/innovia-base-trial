@@ -27,3 +27,14 @@
 .catalog-order-title:focus{outline:2px solid #c9ec71;outline-offset:4px}
 .catalog-order-unpublished{display:block;font-size:.8rem;color:#b7ced1;font-weight:400}
 @media(max-width:480px){.catalog-order-row{align-items:flex-start;flex-direction:column}.catalog-order-buttons{align-self:flex-end}}
+
+.portal-nav{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0}.portal-nav a{display:inline-block}
+.teacher-materials{display:grid;gap:20px}.teacher-materials .panel{margin:0}.teacher-materials h2{margin-top:0}
+.tile-region{background:linear-gradient(130deg,#547c2b,#244f43)}.tile-practice{background:linear-gradient(130deg,#346cac,#233f74)}
+.prototype-notice{border:1px solid #d4bb6e;border-radius:12px;padding:18px;background:#4a3d24;margin-bottom:24px;line-height:1.7}
+.prototype-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.prototype-entry{border:1px solid #52707b;border-radius:18px;padding:14px;background:#113341}
+.prototype-entry .learning-tile{min-height:280px}.prototype-entry .actions{margin-top:14px}.prototype-entry label{display:block;margin-top:14px;line-height:1.7}
+.prototype-form .input{max-width:none}.prototype-form textarea{min-height:90px;resize:vertical;font:inherit}.prototype-form select{font:inherit}
+.practice-question{padding:18px;border:1px solid #52707b;border-radius:12px;margin:18px 0;background:#082632}.practice-question h3{margin-top:0}
+.inline-message{min-height:1.6em;line-height:1.6}.practice-progress{color:#c9ec71;font-weight:700}
+@media(max-width:680px){.prototype-tools{grid-template-columns:1fr}.portal-nav{gap:8px}}

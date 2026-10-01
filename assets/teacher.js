@@ -8,83 +8,22 @@ const passwordMessage = document.getElementById('password-message');
 const passwordButton = document.getElementById('change-password-button');
 let changingPassword = false;
 let visible = false;
-const materials = [
-  {id:'binary',title:'2進数バトル'},
-  {id:'logic',title:'論理回路バトル'},
-  {id:'simulator',title:'論理回路シミュレータ'},
-  {id:'network',title:'ネットにつながらない！原因を探せ'}
-];
-let catalogOrder = materials.map(material => material.id);
-let savedCatalogOrder = [...catalogOrder];
-let catalogLoaded = false;
-let savingCatalog = false;
-const catalogPanel = document.createElement('section');
-catalogPanel.className = 'panel';
-catalogPanel.id = 'catalog-order-settings';
-catalogPanel.setAttribute('aria-labelledby','catalog-order-heading');
-catalogPanel.innerHTML = '<h2 id="catalog-order-heading">生徒の教材一覧の並び順</h2><p class="small-note">「上へ」「下へ」で並べ替え、「順番を保存」を押してください。保存した順番は生徒の端末にも反映されます。開いている教材一覧は約15秒以内に更新されます。</p><ol class="catalog-order-list" id="catalog-order-list"></ol><div class="actions"><button type="button" class="button" id="save-catalog-order" disabled>順番を保存</button><button type="button" class="ghost" id="reset-catalog-order" disabled>保存した順番に戻す</button></div><p id="catalog-order-message" role="status" aria-live="polite"></p>';
-content.prepend(catalogPanel);
-const catalogList = document.getElementById('catalog-order-list');
-const catalogMessage = document.getElementById('catalog-order-message');
-const catalogSave = document.getElementById('save-catalog-order');
-const catalogReset = document.getElementById('reset-catalog-order');
-function validCatalogOrder(order) {
-  return Array.isArray(order) && order.length === materials.length && new Set(order).size === materials.length && materials.every(material => order.includes(material.id));
-}
-function renderCatalogOrder(focusId) {
-  catalogList.replaceChildren();
-  const dirty = JSON.stringify(catalogOrder) !== JSON.stringify(savedCatalogOrder);
-  catalogSave.disabled = !catalogLoaded || savingCatalog || !dirty;
-  catalogReset.disabled = !catalogLoaded || savingCatalog || !dirty;
-  catalogSave.textContent = savingCatalog ? '保存しています…' : '順番を保存';
-  catalogOrder.forEach((id,index) => {
-    const material = materials.find(item => item.id === id);
-    const row = document.createElement('li'); row.className = 'catalog-order-row';
-    const title = document.createElement('div'); title.className = 'catalog-order-title'; title.tabIndex = -1;
-    const number = document.createElement('span'); number.className = 'catalog-order-number'; number.textContent = String(index+1);
-    const name = document.createElement('strong'); name.textContent = material.title;
-    if (id === 'network' && !visible) {
-      const note = document.createElement('span'); note.className = 'catalog-order-unpublished'; note.textContent = '非公開（生徒の一覧には表示されません）'; name.append(note);
-    }
-    title.append(number,name);
-    const buttons = document.createElement('div'); buttons.className = 'catalog-order-buttons';
-    for (const [delta,label] of [[-1,'↑ 上へ'],[1,'↓ 下へ']]) {
-      const button = document.createElement('button'); button.type = 'button'; button.className = 'ghost'; button.textContent = label;
-      button.setAttribute('aria-label',material.title + (delta === -1 ? 'を上へ' : 'を下へ'));
-      button.disabled = !catalogLoaded || savingCatalog || index + delta < 0 || index + delta >= catalogOrder.length;
-      button.onclick = () => {
-        [catalogOrder[index],catalogOrder[index+delta]] = [catalogOrder[index+delta],catalogOrder[index]];
-        catalogMessage.classList.remove('error'); catalogMessage.textContent = material.title + 'を' + String(index+delta+1) + '番目に移動しました。「順番を保存」で反映してください。';
-        renderCatalogOrder(id);
-      };
-      buttons.append(button);
-    }
-    row.append(title,buttons); catalogList.append(row);
-    if (focusId === id) title.focus();
-  });
-}
-async function loadCatalogOrder() {
+async function loadTeacherMaterials() {
   try {
-    const order = await api.rpc('innovia_catalog_order', {}, 'teacher');
-    if (!validCatalogOrder(order)) throw Error('教材の順番を読み込めませんでした。画面を更新してください。');
-    catalogOrder = [...order]; savedCatalogOrder = [...order]; catalogLoaded = true; catalogMessage.textContent = ''; catalogMessage.classList.remove('error');
-  } catch (error) {
-    catalogMessage.classList.add('error'); catalogMessage.textContent = error.message;
-  }
-  renderCatalogOrder();
+    const data=await InnoviaCatalog.api('list',{},true);
+    if(!InnoviaCatalog.valid(data))throw Error('教材一覧を読み込めませんでした。');
+    const grid=document.getElementById('teacher-materials');
+    const existing=new Map([...grid.children].map(card=>[card.dataset.material,card]));
+    const next=[];
+    for(const item of data.materials){
+      let card=existing.get(item.id);
+      if(!card){card=document.createElement('section');card.className='panel';card.dataset.material=item.id;const heading=document.createElement('h2');heading.textContent=item.material.title;const description=document.createElement('p');description.className='small-note';description.textContent=item.material.description;const link=document.createElement('a');link.className='button';link.href=InnoviaCatalog.studentUrl(item);link.textContent='教材を開く';card.append(heading,description,link);}
+      if(!item.builtin){card.querySelector('h2').textContent=item.material.title;card.querySelector('p').textContent=item.material.description;card.querySelector('a').href=InnoviaCatalog.studentUrl(item);}
+      next.push(card);
+    }
+    if(next.some((card,index)=>grid.children[index]!==card))grid.append(...next);
+  } catch(error){tell(error.message);}
 }
-catalogSave.onclick = async () => {
-  if (catalogSave.disabled || savingCatalog) return;
-  savingCatalog = true; renderCatalogOrder(); catalogMessage.classList.remove('error'); catalogMessage.textContent = '順番を保存しています…';
-  try {
-    const order = await api.rpc('innovia_catalog_order', {p_order:[...catalogOrder]}, 'teacher');
-    if (!validCatalogOrder(order)) throw Error('保存結果を確認できませんでした。画面を更新してください。');
-    catalogOrder = [...order]; savedCatalogOrder = [...order]; catalogMessage.textContent = '順番を保存しました。生徒の教材一覧に反映されます。';
-  } catch (error) { catalogMessage.classList.add('error'); catalogMessage.textContent = error.message; }
-  finally { savingCatalog = false; renderCatalogOrder(); }
-};
-catalogReset.onclick = () => { catalogOrder = [...savedCatalogOrder]; catalogMessage.classList.remove('error'); catalogMessage.textContent = '保存した順番に戻しました。'; renderCatalogOrder(); };
-renderCatalogOrder();
 const passwordVisibility = [];
 for (const input of document.querySelectorAll('input[type="password"]')) {
   const label = document.querySelector(`label[for="${input.id}"]`).textContent;
@@ -128,9 +67,7 @@ async function status() {
   form.hidden = state.teacher;
   passwordButton.disabled = !state.teacher || changingPassword;
   if (!state.teacher) clearPasswordForm();
-  if (state.teacher && !catalogLoaded) await loadCatalogOrder();
-  if (!state.teacher) { catalogLoaded = false; catalogMessage.textContent = ''; }
-  renderCatalogOrder();
+  if (state.teacher) await loadTeacherMaterials();
   document.getElementById('network-state').textContent = visible ? '公開中' : '非公開';
   document.getElementById('toggle').textContent = visible ? '非公開にする' : '公開する';
   if (!state.teacher && (await api.client('teacher').auth.getSession()).data.session) tell('ログインできましたが、先生の権限がまだ登録されていません。準備ガイドの「先生を登録する」を確認してください。');
@@ -197,3 +134,6 @@ passwordForm.onsubmit = async event => {
 document.getElementById('logout').onclick = async () => { clearPasswordForm(); await api.client('teacher').auth.signOut(); await status(); tell('ログアウトしました。'); };
 if (api.configured()) status().catch(error => tell(error.message));
 else { form.querySelector('.button').disabled = true; tell('この版は接続設定を準備中です。今の公開版は引き続き使えます。'); }
+
+window.addEventListener("pageshow",()=>{if(!content.hidden)loadTeacherMaterials();});
+setInterval(()=>{if(!content.hidden&&!document.hidden&&!changingPassword)loadTeacherMaterials();},15000);

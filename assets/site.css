@@ -43,3 +43,7 @@
 .practice-question{padding:18px;border:1px solid #52707b;border-radius:12px;margin:18px 0;background:#082632}.practice-question h3{margin-top:0}
 .inline-message{min-height:1.6em;line-height:1.6}.practice-progress{color:#c9ec71;font-weight:700}
 @media(max-width:680px){.prototype-tools{grid-template-columns:1fr}.portal-nav{gap:8px}}
+
+.catalog-order-buttons{max-width:100%}.catalog-visibility-buttons{flex-wrap:wrap}
+
+.learning-tile.is-heading-only{position:relative;cursor:default;padding-top:52px}.tile-preparing{position:absolute;top:14px;right:14px;max-width:calc(100% - 28px);font-size:.76rem;font-weight:800;line-height:1.5;padding:5px 10px;border-radius:8px;background:#f6df92;color:#29351b}.learning-tile.is-heading-only:hover{transform:none}.catalog-order-buttons{flex-wrap:wrap}

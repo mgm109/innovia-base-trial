@@ -1,5 +1,14 @@
 .teacher-home{padding-bottom:30px}
-.teacher-home .portal-nav{margin:16px 0 30px}
+.teacher-home .teacher-catalog-intro{padding:42px 0 24px}
+.teacher-heading-row{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.teacher-heading-row h1{margin:14px 0 0;font-size:clamp(2rem,5vw,3.3rem)}
+.teacher-view-links{display:flex;gap:12px;align-items:center;margin-top:14px;flex-shrink:0}
+.teacher-view-links a{display:inline-flex;align-items:center;justify-content:center;min-width:92px}
+.teacher-setting-stack{display:grid;justify-items:start;gap:12px;margin:0 0 10px}
+.teacher-order-link{display:inline-flex;align-items:center;justify-content:center;min-width:150px}
+.teacher-logout{font-size:.9rem;padding:10px 17px}
+.teacher-home #message:empty{margin:0}
+@media(max-width:480px){.teacher-heading-row{gap:10px;flex-wrap:wrap}.teacher-view-links{gap:8px}.teacher-view-links a{min-width:76px;padding:11px 14px}}
 .teacher-home .teacher-materials{grid-template-columns:repeat(2,minmax(0,1fr));gap:26px;align-items:start}
 .teacher-entry{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:20px;overflow:hidden;background:var(--card)}
 .teacher-entry .learning-tile{flex:1;border:0;border-radius:0;min-height:335px}
@@ -11,7 +20,14 @@
 .teacher-publication:before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
 .teacher-publication.is-public{color:#c9ec71}.teacher-publication.is-hidden{color:#bad0d3}.teacher-publication.is-draft{color:#ffdc94}
 .teacher-student-link{font-size:.85rem;color:var(--muted-foreground);text-underline-offset:4px}
-.teacher-home #password-settings{margin-top:32px}
+.teacher-home #password-settings{margin:0;padding:0;border:0;background:transparent;max-width:620px;width:100%}
+.teacher-home #password-settings .password-summary{display:inline-flex;align-items:center;gap:10px;min-width:150px;cursor:pointer;list-style:none;border:1px solid #708b95;border-radius:9px;padding:11px 18px;font-weight:400}
+.teacher-home #password-settings .password-summary::-webkit-details-marker{display:none}
+.teacher-home #password-settings .password-summary:before{content:'＋';color:#c9ec71;font-weight:700}
+.teacher-home #password-settings[open]{background:#113341;border:1px solid #52707b;border-radius:18px;padding:20px}
+.teacher-home #password-settings[open] .password-summary:before{content:'−'}
+.teacher-home #password-settings[open] .password-summary{margin-bottom:8px}
+
 @media(max-width:680px){.teacher-home .teacher-materials{grid-template-columns:1fr;gap:20px}.teacher-entry .learning-tile{min-height:0;padding:24px}.teacher-entry .tile-action{margin-top:23px}.teacher-card-controls{padding:16px 20px}}
 
 .catalog-display-editor{border-top:1px solid var(--border);padding:16px 24px}

@@ -12,14 +12,15 @@
   }
   function card(item,preview=false) {
     const doc=item.material;
-    const link=document.createElement('a'); link.className='learning-tile tile-'+(item.builtin?(item.id==='logic'?'battle':item.id):'practice'); link.dataset.material=item.id;
-    link.href=studentUrl(item,preview);
+    const headingOnly=item.headingOnly&&!preview;
+    const link=document.createElement(headingOnly?'article':'a'); link.className='learning-tile tile-'+(item.builtin?(item.id==='logic'?'battle':item.id):'practice'); link.dataset.material=item.id;
+    if(!headingOnly)link.href=studentUrl(item,preview);else{link.classList.add('is-heading-only');link.setAttribute('aria-label',doc.title+'：準備中・まだ開けません');const badge=document.createElement('span');badge.className='tile-preparing';badge.textContent='準備中・まだ開けません';link.append(badge);}
     const head=document.createElement('div'); head.className='tile-head';
     const icon=document.createElement('span'); icon.className='tile-icon'; icon.textContent=doc.icon; icon.setAttribute('aria-hidden','true');
     const category=document.createElement('span'); category.className='tile-category';category.textContent=doc.category;head.append(icon,category);
     const title=document.createElement('h3');title.textContent=doc.title;
     const text=document.createElement('p');text.textContent=doc.description;
-    const action=document.createElement('span');action.className='tile-action';action.textContent=preview?'試してみる →':({binary:'PINを入力して参加',logic:'PINを入力して参加',simulator:'シミュレータを開く',network:'教材を開く'}[item.id]||'教材を開く →');
+    const action=document.createElement('span');action.className='tile-action';action.textContent=headingOnly?'公開までお待ちください':preview?'試してみる →':({binary:'PINを入力して参加',logic:'PINを入力して参加',simulator:'シミュレータを開く',network:'教材を開く'}[item.id]||'教材を開く →');
     link.append(head,title,text);
     const badges={binary:['6問','みんなで対戦'],logic:['5問','みんなで対戦'],simulator:['回路を組み立てる','真理値表で確かめる'],network:['3問','ひとりで考える']}[item.id];
     if(badges){const meta=document.createElement('div');meta.className='tile-meta';for(const badge of badges){const span=document.createElement('span');span.textContent=badge;meta.append(span);}link.append(meta);}

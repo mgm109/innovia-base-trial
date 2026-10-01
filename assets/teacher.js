@@ -25,7 +25,7 @@ async function loadTeacherMaterials() {
     if(request!==catalogueRequest||window.InnoviaCardEditor?.editing())return;
     if(!InnoviaCatalog.valid(drafts)||!InnoviaCatalog.valid(published))throw Error('教材一覧を読み込めませんでした。');
     const publishedItems=new Map(published.materials.map(item=>[item.id,item]));
-    const items=drafts.materials.map(item=>publishedItems.get(item.id)||item);
+    const items=drafts.materials.map(item=>item.published?(publishedItems.get(item.id)||item):item);
     const signature=JSON.stringify([items,visibilityBusy]);
     if(signature===catalogueSignature)return;
     const grid=document.getElementById('teacher-materials');
@@ -48,15 +48,15 @@ function teacherCard(item) {
   entry.append(card);
   const controls=document.createElement('div');controls.className='teacher-card-controls';
   const state=document.createElement('span');state.className='teacher-publication '+(!item.published?'is-draft':item.visible===false?'is-hidden':'is-public');
-  state.textContent=!item.published?'試作・先生のみ':item.visible===false?'生徒用は非公開':'生徒用に公開中';
+  state.textContent=!item.published?'試作・先生のみ':item.headingOnly&&item.visible!==false?'生徒用に見出しのみ':item.visible===false?'生徒用は非公開':'生徒用に公開中';
   const actions=document.createElement('div');actions.className='actions';
-  if(item.published){
+  if(item.published&&!item.headingOnly){
     const button=document.createElement('button');button.type='button';button.className='ghost';
     button.textContent=item.visible===false?'公開する':'非公開にする';
     button.setAttribute('aria-label',item.material.title+(item.visible===false?'を公開する':'を非公開にする'));
     button.disabled=visibilityBusy;button.onclick=()=>setMaterialVisibility(item.id,item.visible===false);actions.append(button);
   }else{
-    const publish=document.createElement('a');publish.className='ghost';publish.href='prototype/';publish.textContent='確認して生徒用に追加';actions.append(publish);
+    const publish=document.createElement('a');publish.className='ghost';publish.href=item.headingOnly?'order/':'prototype/';publish.textContent=item.headingOnly?'公開状態を変更':'確認して生徒用に追加';actions.append(publish);
   }
   if(['binary','logic'].includes(item.id)){const student=document.createElement('a');student.className='teacher-student-link';student.href=C.studentUrl(item);student.textContent='生徒入口';actions.append(student);}
   controls.append(state,actions);entry.append(controls);
@@ -103,6 +103,8 @@ async function status() {
   const state = await api.rpc('innovia_settings', {}, 'teacher');
   content.hidden = !state.teacher;
   form.hidden = state.teacher;
+  document.getElementById('logout').hidden = !state.teacher;
+  const viewLinks=document.getElementById('teacher-view-links');if(viewLinks)viewLinks.hidden=!state.teacher;
   passwordButton.disabled = !state.teacher || changingPassword;
   if (!state.teacher) clearPasswordForm();
   if (state.teacher) await loadTeacherMaterials();

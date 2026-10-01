@@ -18,10 +18,11 @@ async function setMaterialVisibility(id,next) {
   finally{visibilityBusy=false;await loadTeacherMaterials();}
 }
 async function loadTeacherMaterials() {
+  if(window.InnoviaCardEditor?.editing())return;
   const request = ++catalogueRequest;
   try {
     const [drafts,published]=await Promise.all([InnoviaCatalog.api('preview',{},true),InnoviaCatalog.api('list',{},true)]);
-    if(request!==catalogueRequest)return;
+    if(request!==catalogueRequest||window.InnoviaCardEditor?.editing())return;
     if(!InnoviaCatalog.valid(drafts)||!InnoviaCatalog.valid(published))throw Error('教材一覧を読み込めませんでした。');
     const publishedItems=new Map(published.materials.map(item=>[item.id,item]));
     const items=drafts.materials.map(item=>publishedItems.get(item.id)||item);
@@ -58,7 +59,9 @@ function teacherCard(item) {
     const publish=document.createElement('a');publish.className='ghost';publish.href='prototype/';publish.textContent='確認して生徒用に追加';actions.append(publish);
   }
   if(['binary','logic'].includes(item.id)){const student=document.createElement('a');student.className='teacher-student-link';student.href=C.studentUrl(item);student.textContent='生徒入口';actions.append(student);}
-  controls.append(state,actions);entry.append(controls);return entry;
+  controls.append(state,actions);entry.append(controls);
+  InnoviaCardEditor.attach(entry,item,async()=>{entry.replaceWith(teacherCard(item));catalogueSignature='';await loadTeacherMaterials();tell('カードの表示を保存しました。');});
+  return entry;
 }
 const passwordVisibility = [];
 for (const input of document.querySelectorAll('input[type="password"]')) {

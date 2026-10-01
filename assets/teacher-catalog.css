@@ -1,6 +1,6 @@
 .teacher-home{padding-bottom:30px}
 .teacher-home .portal-nav{margin:16px 0 30px}
-.teacher-home .teacher-materials{grid-template-columns:repeat(2,minmax(0,1fr));gap:26px}
+.teacher-home .teacher-materials{grid-template-columns:repeat(2,minmax(0,1fr));gap:26px;align-items:start}
 .teacher-entry{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:20px;overflow:hidden;background:var(--card)}
 .teacher-entry .learning-tile{flex:1;border:0;border-radius:0;min-height:335px}
 .teacher-entry .tile-action{margin-top:auto}
@@ -13,3 +13,11 @@
 .teacher-student-link{font-size:.85rem;color:var(--muted-foreground);text-underline-offset:4px}
 .teacher-home #password-settings{margin-top:32px}
 @media(max-width:680px){.teacher-home .teacher-materials{grid-template-columns:1fr;gap:20px}.teacher-entry .learning-tile{min-height:0;padding:24px}.teacher-entry .tile-action{margin-top:23px}.teacher-card-controls{padding:16px 20px}}
+
+.catalog-display-editor{border-top:1px solid var(--border);padding:16px 24px}
+.catalog-display-editor summary{cursor:pointer;font-size:.9rem;font-weight:700;color:var(--foreground)}
+.catalog-display-editor form{margin-top:16px}.catalog-display-editor fieldset{border:0;padding:0;margin:0;min-width:0}
+.catalog-display-editor .input-label{display:block;margin:14px 0 0}.catalog-display-editor .input{display:block;width:100%;margin-top:7px;box-sizing:border-box}
+.catalog-display-editor textarea{resize:vertical;min-height:90px}.catalog-display-editor .actions{margin-top:18px;flex-wrap:wrap;gap:10px}
+.catalog-display-editor .small-note{margin-top:0}.catalog-display-editor .inline-message{font-size:.88rem}
+@media(max-width:680px){.catalog-display-editor{padding:16px 20px}}

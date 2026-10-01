@@ -7,8 +7,9 @@ const passwordPanel = document.getElementById('password-settings');
 const passwordMessage = document.getElementById('password-message');
 const passwordButton = document.getElementById('change-password-button');
 let changingPassword = false;
-let visible = false;
 let visibilityBusy = false;
+let catalogueRequest = 0;
+let catalogueSignature = '';
 async function setMaterialVisibility(id,next) {
   if(visibilityBusy)return;
   visibilityBusy=true;await loadTeacherMaterials();
@@ -17,25 +18,47 @@ async function setMaterialVisibility(id,next) {
   finally{visibilityBusy=false;await loadTeacherMaterials();}
 }
 async function loadTeacherMaterials() {
+  const request = ++catalogueRequest;
   try {
-    const data=await InnoviaCatalog.api('list',{},true);
-    if(!InnoviaCatalog.valid(data))throw Error('教材一覧を読み込めませんでした。');
+    const [drafts,published]=await Promise.all([InnoviaCatalog.api('preview',{},true),InnoviaCatalog.api('list',{},true)]);
+    if(request!==catalogueRequest)return;
+    if(!InnoviaCatalog.valid(drafts)||!InnoviaCatalog.valid(published))throw Error('教材一覧を読み込めませんでした。');
+    const publishedItems=new Map(published.materials.map(item=>[item.id,item]));
+    const items=drafts.materials.map(item=>publishedItems.get(item.id)||item);
+    const signature=JSON.stringify([items,visibilityBusy]);
+    if(signature===catalogueSignature)return;
     const grid=document.getElementById('teacher-materials');
-    const existing=new Map([...grid.children].map(card=>[card.dataset.material,card]));
-    const next=[];
-    for(const item of data.materials){
-      let card=existing.get(item.id);
-      if(!card){card=document.createElement('section');card.className='panel';card.dataset.material=item.id;const heading=document.createElement('h2');heading.textContent=item.material.title;const description=document.createElement('p');description.className='small-note';description.textContent=item.material.description;const link=document.createElement('a');link.className='button';link.href=InnoviaCatalog.studentUrl(item);link.textContent='教材を開く';card.append(heading,description,link);}
-      if(!item.builtin){card.querySelector('h2').textContent=item.material.title;card.querySelector('p').textContent=item.material.description;card.querySelector('a').href=InnoviaCatalog.studentUrl(item);}
-      if(item.id!=='network'){
-        let controls=card.querySelector('.material-visibility');
-        if(!controls){controls=document.createElement('div');controls.className='actions material-visibility';const state=document.createElement('span');state.className='status';const button=document.createElement('button');button.type='button';button.className='ghost';controls.append(state,button);card.append(controls);}
-        const isVisible=item.visible!==false,button=controls.querySelector('button');controls.querySelector('.status').textContent=isVisible?'公開中':'非公開';button.textContent=isVisible?'非公開にする':'公開する';button.setAttribute('aria-label',item.material.title+(isVisible?'を非公開にする':'を公開する'));button.disabled=visibilityBusy;button.onclick=()=>setMaterialVisibility(item.id,!isVisible);
-      }else document.getElementById('toggle').disabled=visibilityBusy;
-      next.push(card);
-    }
-    if(next.some((card,index)=>grid.children[index]!==card))grid.append(...next);
+    const cards=items.map(teacherCard);
+    grid.replaceChildren(...cards);
+    document.getElementById('teacher-material-count').textContent=String(items.length)+'つの教材';
+    catalogueSignature=signature;
   } catch(error){tell(error.message);}
+}
+function teacherCard(item) {
+  const C=InnoviaCatalog,entry=document.createElement('article');entry.className='teacher-entry';entry.dataset.material=item.id;
+  const card=C.card(item,true),action=card.querySelector('.tile-action');
+  if(['binary','logic'].includes(item.id)){
+    card.href=new URL('battle/host/?course='+item.id,api.root).href;
+    action.textContent='先生のホスト画面を開く →';
+  }else if(!item.builtin&&item.material.kind==='link'){
+    card.href=C.safeUrl(item.material.href);
+    action.textContent='教材を試す →';
+  }else action.textContent=item.id==='simulator'?'シミュレータを開く →':'教材を試す →';
+  entry.append(card);
+  const controls=document.createElement('div');controls.className='teacher-card-controls';
+  const state=document.createElement('span');state.className='teacher-publication '+(!item.published?'is-draft':item.visible===false?'is-hidden':'is-public');
+  state.textContent=!item.published?'試作・先生のみ':item.visible===false?'生徒用は非公開':'生徒用に公開中';
+  const actions=document.createElement('div');actions.className='actions';
+  if(item.published){
+    const button=document.createElement('button');button.type='button';button.className='ghost';
+    button.textContent=item.visible===false?'公開する':'非公開にする';
+    button.setAttribute('aria-label',item.material.title+(item.visible===false?'を公開する':'を非公開にする'));
+    button.disabled=visibilityBusy;button.onclick=()=>setMaterialVisibility(item.id,item.visible===false);actions.append(button);
+  }else{
+    const publish=document.createElement('a');publish.className='ghost';publish.href='prototype/';publish.textContent='確認して生徒用に追加';actions.append(publish);
+  }
+  if(['binary','logic'].includes(item.id)){const student=document.createElement('a');student.className='teacher-student-link';student.href=C.studentUrl(item);student.textContent='生徒入口';actions.append(student);}
+  controls.append(state,actions);entry.append(controls);return entry;
 }
 const passwordVisibility = [];
 for (const input of document.querySelectorAll('input[type="password"]')) {
@@ -75,14 +98,11 @@ function clearPasswordForm() {
 }
 async function status() {
   const state = await api.rpc('innovia_settings', {}, 'teacher');
-  visible = state.visible;
   content.hidden = !state.teacher;
   form.hidden = state.teacher;
   passwordButton.disabled = !state.teacher || changingPassword;
   if (!state.teacher) clearPasswordForm();
   if (state.teacher) await loadTeacherMaterials();
-  document.getElementById('network-state').textContent = visible ? '公開中' : '非公開';
-  document.getElementById('toggle').textContent = visible ? '非公開にする' : '公開する';
   if (!state.teacher && (await api.client('teacher').auth.getSession()).data.session) tell('ログインできましたが、先生の権限がまだ登録されていません。準備ガイドの「先生を登録する」を確認してください。');
 }
 form.onsubmit = async event => {
@@ -94,9 +114,6 @@ form.onsubmit = async event => {
     if (error) throw Error('ログインできません。メールアドレス・パスワードと、先生用の登録を確認してください。');
     await status();
   } catch (error) { tell(error.message); } finally { button.disabled = false; }
-};
-document.getElementById('toggle').onclick = async event => {
-  await setMaterialVisibility('network',!visible);
 };
 passwordForm.onsubmit = async event => {
   event.preventDefault();

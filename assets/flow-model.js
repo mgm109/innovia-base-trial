@@ -8,6 +8,29 @@ export function sample(kind){const n=(type,text)=>({...block(type),text});const 
 export function count(nodes){return nodes.reduce((n,b)=>n+1+count(b.yes||[])+count(b.no||[])+count(b.body||[]),0);}
 export function find(nodes,id,container='root',depth=0){for(let i=0;i<nodes.length;i++){const b=nodes[i];if(b.id===id)return {node:b,list:nodes,index:i,container,depth};for(const branch of ['yes','no','body'])if(b[branch]){const found=find(b[branch],id,b.id+':'+branch,depth+1);if(found)return found;}}return null;}
 export function containerFor(doc,key){if(key==='root')return {list:doc.nodes,depth:0};const [id,branch]=key.split(':');const f=find(doc.nodes,id);if(!f||!['yes','no','body'].includes(branch)||!Array.isArray(f.node[branch]))throw Error('追加する場所を選び直してください。');return {list:f.node[branch],depth:f.depth+1};}
+// Reordering moves the complete logical step, including its branches or loop body.
+// Work on a copy so an invalid drop never loses the original chart.
+export function moveNode(doc,id,destination,index){
+ const next=structuredClone(doc),source=find(next.nodes,id),target=containerFor(next,destination);
+ if(!source||!Number.isInteger(index)||index<0||index>target.list.length)throw Error('移動先を選び直してください。');
+ if(destination!=='root'&&find([source.node],destination.split(':')[0]))throw Error('自分の記号の中には移動できません。');
+ const insertion=index-(source.list===target.list&&source.index<index?1:0);
+ if(source.list===target.list&&insertion===source.index)return {container:destination,index:insertion,changed:false};
+ source.list.splice(source.index,1);target.list.splice(insertion,0,source.node);
+ // Old absolute positions and automatic line coordinates cannot describe a new order.
+ delete next.positions;
+ if(next.edges)next.edges=next.edges.map(e=>e.custom?e:{id:e.id,kind:e.kind});
+ const valid=validate(next);for(const key of Object.keys(doc))delete doc[key];Object.assign(doc,valid);
+ return {container:destination,index:insertion,changed:true};
+}
+export function dropSlot(doc,id,chart,x,y){
+ const source=find(doc.nodes,id);if(!source)return null;
+ const candidates=chart.slots.filter(s=>s.container==='root'||!find([source.node],s.container.split(':')[0]));
+ // A drop on a symbol means before/after that symbol, rather than stacking on it.
+ const hit=chart.bounds.find(b=>b.id!==id&&!b.terminal&&b.part==='text'&&x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h);
+ if(hit){const f=find(doc.nodes,hit.id),after=f.container===source.container?source.index<f.index:y>=hit.y+hit.h/2,index=f.index+(after?1:0),direct=candidates.find(s=>s.container===f.container&&s.index===index);if(direct)return direct;}
+ return candidates.reduce((best,s)=>!best||Math.hypot(x-s.x,y-s.y)<Math.hypot(x-best.x,y-best.y)?s:best,null);
+}
 export function validate(input){if(!input||input.version!==1||typeof input.title!=='string'||input.title.length>80||!Array.isArray(input.nodes))throw Error('このアプリの編集用ファイルを選んでください。');const ids=new Set();let total=0;const shortText=(value,limit)=>{if(typeof value!=='string'||!value.trim()||value.length>limit)throw Error('文章の長さや内容を確認してください。');return value.trim();};function clean(nodes,depth){if(depth>3)throw Error('入れ子は３段までにしてください。');return nodes.map(b=>{if(++total>LIMIT||!b||!TYPES[b.type]||typeof b.id!=='string'||!/^n[a-z0-9]{1,40}$/.test(b.id)||ids.has(b.id)||typeof b.text!=='string'||!b.text.trim()||b.text.length>TYPES[b.type].limit)throw Error('記号の数や内容を確認してください。');ids.add(b.id);const result={id:b.id,type:b.type,text:b.text.trim()};if(b.type==='loop'&&b.endText!==undefined)result.endText=shortText(b.endText,60);if(b.type==='if')for(const field of ['yesLabel','noLabel'])if(b[field]!==undefined)result[field]=shortText(b[field],12);for(const branch of b.type==='if'?['yes','no']:b.type==='loop'?['body']:[]){if(!Array.isArray(b[branch]))throw Error('分岐や繰り返しの内容を確認してください。');result[branch]=clean(b[branch],depth+1);}return result;});}const result={version:1,title:input.title.trim()||'わたしのフローチャート',nodes:clean(input.nodes,0)};for(const field of ['startText','endText'])if(input[field]!==undefined)result[field]=shortText(input[field],24);if(input.edges!==undefined){if(!Array.isArray(input.edges)||input.edges.length>100)throw Error('線は100本までです。');const edgeIds=new Set();result.edges=input.edges.map(e=>{if(!e||typeof e.id!=='string'||!/^[-a-zA-Z0-9:]{1,180}$/.test(e.id)||edgeIds.has(e.id)||!['arrow','line','hidden'].includes(e.kind))throw Error('線の内容を確認してください。');edgeIds.add(e.id);const edge={id:e.id,kind:e.kind};if(e.custom===true){if(!e.id.startsWith('custom:')||!e.points)throw Error('追加した線の内容を確認してください。');edge.custom=true;}if(e.points!==undefined){if(!Array.isArray(e.points)||e.points.length<2||e.points.length>10||e.points.some(p=>!Array.isArray(p)||p.length!==2||p.some(v=>!Number.isFinite(v)||v<0||v>12000)))throw Error('線の位置を確認してください。');edge.points=e.points.map(p=>[...p]);}return edge;});}cleanPositions(input.positions,result);return result;}
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 function lines(text,max=26){const rows=[];let row='',units=0;for(const c of text){const size=/[\u0000-\u007f]/.test(c)?1:2;if(c==='\n'||units+size>max){rows.push(row);row='';units=0;if(c==='\n')continue;}row+=c;units+=size;}if(row)rows.push(row);return rows.length?rows:[''];}

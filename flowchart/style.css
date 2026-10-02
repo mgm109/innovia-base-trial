@@ -20,3 +20,8 @@ button,.button{background:#173946;color:#f5f8f5;border-color:#52707b}button:hove
 
 .symbol.actual-symbol{width:36px;height:28px;flex-basis:36px;display:block;border:0;background:none;overflow:visible;transform:none;clip-path:none;border-radius:0}.diagram-scroll svg [data-branch-label]{cursor:text}.diagram-scroll svg [data-branch-label]:hover text,.diagram-scroll svg [data-branch-label]:focus text{fill:#087466;text-decoration:underline}.branch-label-fields{margin:12px 0}.branch-label-fields input{width:100%;background:#082632;color:#f5f8f5;border:1px solid #69848e;border-radius:8px;padding:9px;margin-bottom:10px;font:inherit;font-size:12px}
 .embedded-flowchart .app-header,.embedded-flowchart .intro{display:none}.embedded-flowchart main{padding:0 12px 18px}.embedded-flowchart .steps{margin-top:14px}
+
+/* Give the diagram priority; editing stays below it. */
+main{max-width:1760px;padding-left:24px;padding-right:24px}.diagram-scroll{height:720px;min-height:560px;padding-top:14px}.diagram-scroll svg{flex-shrink:0}
+@media(min-width:621px){.workbench{grid-template-columns:190px minmax(0,1fr);gap:16px}.toolbox{grid-row:1/span 2;padding:14px}.inspector{grid-column:2;grid-row:2;position:static;display:grid;grid-template-columns:minmax(220px,1fr) minmax(180px,1fr);gap:14px;padding:16px}.inspector h2{grid-column:1/-1}.inspector form{grid-column:1;grid-row:2/span 3}.inspector #selection-empty{grid-column:1;grid-row:2/span 2}.inspector .learning-note{grid-column:2;margin:0}.inspector .privacy-note{grid-column:2;margin:0}}
+@media(max-width:620px){main{padding-left:12px;padding-right:12px}.diagram-scroll{height:620px;min-height:420px}}

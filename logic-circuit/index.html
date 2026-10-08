@@ -10,7 +10,7 @@
     <style>
         /* Canvas grid background */
         .grid-bg {
-            background-image: 
+            background-image:
                 radial-gradient(circle, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
             background-size: 20px 20px;
         }
@@ -94,7 +94,7 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #475569;
         }
-    
+
         body { font-family: "Noto Sans JP", Meiryo, sans-serif; }
         #app-toolbar { height: auto; flex-wrap: wrap; gap: 10px; min-height: 60px; }
         #app-toolbar > div:last-child { flex-wrap: wrap; }
@@ -123,13 +123,13 @@
         }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; scroll-behavior: auto !important; } }
     </style>
-</head>
-<body class="bg-darkbg text-slate-100 font-sans h-dvh flex flex-col overflow-hidden select-none">
+<link rel="stylesheet" href="../assets/catalog-navigation.css"></head>
+<body class="bg-darkbg text-slate-100 font-sans h-dvh flex flex-col overflow-hidden select-none"><nav class="catalog-navigation" aria-label="教材一覧"><a class="catalog-brand" target="_top" href="https://script.google.com/macros/s/AKfycbw6HiZw2kgHCtZUzOEe9rj3OICnMFAs2xQ7dHh4gJ-FXC8eCsT8q7mXIs5GqdSy02KIow/exec?page=catalog">INNOVIA Base <span>✳</span></a><a class="catalog-return" target="_top" href="https://script.google.com/macros/s/AKfycbw6HiZw2kgHCtZUzOEe9rj3OICnMFAs2xQ7dHh4gJ-FXC8eCsT8q7mXIs5GqdSy02KIow/exec?page=catalog">教材一覧へ戻る</a></nav>
 
     <!-- Navigation / Header Toolbar -->
     <header id="app-toolbar" class="h-13 bg-slate-900 border-b border-slate-800 px-4 py-2 flex items-center justify-between z-20 shrink-0">
         <div class="flex items-center gap-3">
-            <a href="https://script.google.com/macros/s/AKfycbw6HiZw2kgHCtZUzOEe9rj3OICnMFAs2xQ7dHh4gJ-FXC8eCsT8q7mXIs5GqdSy02KIow/exec?page=catalog" target="_top" class="home-link">教材一覧へ戻る</a>
+
             <div class="bg-gradient-to-tr from-cyan-500 to-blue-600 p-1.5 rounded-lg shadow-lg">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
@@ -265,7 +265,7 @@
             <!-- Center Interactive Canvas Area -->
             <main id="canvas-container" class="flex-1 relative bg-canvasbg grid-bg overflow-auto cursor-crosshair">
                 <div id="canvas-inner" class="relative min-w-[900px] min-h-[600px] w-full h-full">
-                    
+
                     <!-- SVG Layer for Connections/Wires -->
                     <svg id="svg-wires" class="absolute inset-0 w-full h-full pointer-events-none z-0">
                         <!-- Dynamic wires render here -->
@@ -340,7 +340,7 @@
                 <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 LogicCraft の使い方とリアルタイム真理値表
             </h3>
-            
+
             <div class="space-y-2 text-xs leading-relaxed">
                 <p><strong class="text-cyan-400">1. パーツ配置:</strong> パレットからドラッグして配置します。クリック／タップやキーボードでも追加できます。上部のバーをドラッグして移動します。</p>
                 <p><strong class="text-cyan-400">2. ドラッグ配線:</strong> 右の出力ピンから左の入力ピンへドラッグします。出力ピン→入力ピンの順にクリック／タップでも接続できます。Escで中止します。</p>

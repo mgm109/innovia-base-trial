@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Python変数トレース Ver.31 | INNOVIA Base</title>
+<style>
+:root{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#19324b;background:#f3f7fb}*{box-sizing:border-box}body{margin:0}header{background:#143653;color:white;padding:16px max(20px,calc((100vw - 1150px)/2));display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}header h1{margin:0;font-size:22px}header small{color:#c9e0f1}main{max-width:1150px;margin:auto;padding:20px}.toolbar{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-bottom:15px}button,select,input,textarea{font:inherit}button,select{border-radius:9px;border:1px solid #b6c8d8;background:white;color:#19324b;padding:9px 13px}button{cursor:pointer}button:hover{background:#edf5ff}button.primary{background:#1763b6;color:white;border-color:#1763b6}button.primary:hover{background:#0a4c99}button:disabled{opacity:.4;cursor:not-allowed}.cols{display:grid;grid-template-columns:1.2fr 1fr;gap:14px}.panel{background:white;border:1px solid #d8e4ed;border-radius:15px;padding:16px;min-width:0;box-shadow:0 2px 8px #1c42610b}h2{font-size:17px;margin:0 0 12px}p{line-height:1.6}textarea{width:100%;min-height:275px;resize:vertical;border:1px solid #bdcedd;border-radius:9px;padding:14px;font:16px/1.7 ui-monospace,Consolas,monospace;color:#203c56;background:#fbfdff;tab-size:4}textarea:focus,input:focus{outline:2px solid #70b1f3}pre{white-space:pre-wrap;word-break:break-word}.codeView{border:1px solid #dbe5ee;border-radius:9px;background:#f7fafd;max-height:355px;overflow:auto;padding:7px 0;font:15px/1.75 ui-monospace,Consolas,monospace}.line{display:flex;white-space:pre;min-height:26px}.line .num{color:#768b9d;width:45px;text-align:right;padding-right:15px;flex:none;user-select:none}.line .src{min-width:0}.line.active{background:#ffefb2;border-left:4px solid #e0a421}.line.active .num{width:41px}.line.done{background:#e6f6eb}.buttons{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.status{padding:10px 12px;background:#e9f2fb;border-radius:9px;margin:10px 0;font-size:14px}.error{background:#ffebe9;color:#8f2727}.success{background:#e5f7ee;color:#186239}table{border-collapse:collapse;width:100%;font-size:15px}th,td{border-bottom:1px solid #e0e7ee;text-align:left;padding:9px}th{color:#5e7182;font-weight:600}td code{background:#f0f4fa;padding:3px 7px;border-radius:5px}.muted{color:#60778a;font-size:13px}.hidden{display:none!important}.exercise{border:1px solid #d5e3ef;border-radius:11px;padding:12px;background:#f9fcff;margin-top:14px}.exercise input{width:100%;padding:10px;border:1px solid #acc3d6;border-radius:8px;margin:9px 0}.history{max-height:340px;overflow:auto}.history th{position:sticky;top:0;background:#f2f7fb;z-index:1;white-space:nowrap}.history td{white-space:nowrap}.history tr.current{background:#eaf4ff;font-weight:700}.history td.changedCell{background:#d8f5dc;color:#14612b;font-weight:700}.history tr.current td.changedCell{background:#bcecc6}.history table{font-size:13px}.tag{display:inline-block;background:#e1eefb;border-radius:15px;padding:4px 10px;font-size:12px}footer{max-width:1150px;margin:auto;padding:10px 20px 30px;font-size:12px;color:#657f90}@media(max-width:780px){.cols{grid-template-columns:1fr}main{padding:12px}header{padding:14px}textarea{min-height:205px}}@media print{header,.toolbar,.file-toolbar,.buttons,.exercise,footer{display:none!important}.panel{box-shadow:none}}
+
+/* INNOVIA Baseへの組み込みを想定したコンパクトな縦配置 */
+:root{color:#173544;background:#f2f8f7}header{background:linear-gradient(115deg,#153e4c,#137f7d);padding:14px max(16px,calc((100vw - 900px)/2))}header h1{font-size:21px}header small{color:#d3f0eb}main{max-width:900px;padding:14px 16px 26px}.toolbar{background:white;border:1px solid #d2e4e1;padding:10px 13px;border-radius:12px;margin-bottom:10px}.panel{border-color:#d3e5e2;margin-bottom:10px;padding:14px}.panel h2{margin-bottom:8px}.editor{padding:10px 14px}.editor summary,.supplementary summary{cursor:pointer;font-weight:700;color:#15545a}.editor textarea{min-height:170px;margin-top:12px}.status{background:#eaf4f2;padding:8px 12px;margin:9px 0}.success{background:#e3f5eb}.codeView{max-height:195px;background:#f8fbfa;border-color:#d9e9e6;line-height:1.55}.line{min-height:24px}.line.active{background:#fff0c3;border-color:#c79124}.line.done{background:#e3f4ed}.stepbar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 7px}button.primary{background:#087b79;border-color:#087b79}button.primary:hover{background:#056461}button:hover{background:#e9f6f3}.history{max-height:265px;overflow:auto;border:1px solid #d8e9e5;border-radius:9px}.history th{background:#eaf5f2}.history tr.current{background:#e2f0fa}.history td.changedCell{background:#d5f1df;color:#11613c}.history tr.current td.changedCell{background:#bce9d1}.history th,.history td{padding:7px 10px}.sectionhead{display:flex;align-items:center;justify-content:space-between;gap:10px}.sectionhead h2{margin:0}.sectionhead button{padding:6px 10px;font-size:13px}.tracepanel .muted{margin:6px 0 8px}.supplementary h2{margin-top:14px}.exercise{background:#f5fbf9;border-color:#bbdbd4;margin:9px 0 0}.exercise p{margin:7px 0}.answerrow{display:flex;gap:8px;align-items:center}.answerrow input{flex:1;min-width:0;margin:5px 0}.answerrow button{flex:none}.editor[open] summary{margin-bottom:3px}footer{max-width:900px}.hidden{display:none!important}
+@media(max-width:600px){main{padding:10px}.toolbar{gap:6px}.toolbar label{font-size:13px}.toolbar select{max-width:100%;font-size:13px}.codeView{max-height:205px}.stepbar button{flex:1}.answerrow{flex-direction:column;align-items:stretch}.answerrow button{width:100%}}
+.current-vars{margin-top:9px;padding:10px 12px;border:1px solid #d5e7e3;border-radius:10px;background:#f7fbfa}.current-vars>strong{display:block;margin-bottom:5px;font-size:14px}.variable-table{overflow-x:auto}.variable-table table{width:auto;min-width:220px}.variable-table th,.variable-table td{text-align:center;min-width:100px;padding:7px 16px;border:1px solid #dbe9e6}.variable-table th{background:#eaf5f2;color:#174c52}.variable-table td{font-weight:700}.variable-table td.changedCell{background:#d5f1df;color:#11613c}.tracepanel .history{max-height:245px}.history td:last-child{text-align:left;white-space:normal;min-width:165px}.history th:last-child{text-align:left}.execution{margin-bottom:8px}.mode-tabs{display:flex;gap:5px;margin:0 0 10px;padding:4px;background:#e2efec;border-radius:12px}.mode-tabs button{flex:1;border:0;border-radius:9px;background:transparent;color:#245b5b;font-weight:700;padding:12px}.mode-tabs button.selected{background:#087b79;color:white;box-shadow:0 1px 5px #1236}.mode-tabs button:focus-visible{outline:3px solid #e0a421;outline-offset:2px}
+.export-buttons{display:flex;gap:7px;flex-wrap:wrap}.export-buttons button{white-space:nowrap}@media(max-width:560px){.sectionhead{align-items:flex-start;flex-direction:column}}
+.tracepanel .history table{width:max-content;min-width:0;max-width:none}.tracepanel .history{width:100%;max-height:340px;overflow:auto}.tracepanel .history th,.tracepanel .history td{min-width:0;padding:6px 12px}.tracepanel .history th:last-child,.tracepanel .history td:last-child{min-width:150px}.toolbar{justify-content:flex-start}.toolbar #exportPdf{margin-left:auto}
+@media(max-width:600px){.toolbar #exportPdf{margin-left:0}}
+
+.file-name{min-width:145px;width:200px;max-width:100%;padding:9px 10px;border:1px solid #b6c8d8;border-radius:9px;background:#fff}.toolbar .file-label{font-size:13px;font-weight:600}.toolbar button{white-space:nowrap}@media(max-width:600px){.file-name{width:100%;flex:1}}
+#pdfPrintArea{display:none}
+@media print{
+ @page{size:A4 portrait;margin:12mm}
+ body{background:#fff;color:#173544}
+ body > header,body > main{display:none!important}
+ #pdfPrintArea{display:block!important;font:12px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+ #pdfPrintArea h1{font-size:20px;margin:0 0 10px}
+ #pdfPrintArea h2{font-size:15px;margin:14px 0 6px}
+ #pdfPrintArea pre{font:11px/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid #cad8d4;padding:10px}
+ #pdfPrintArea table{width:auto;max-width:100%;font-size:10px;border-collapse:collapse}
+ #pdfPrintArea th,#pdfPrintArea td{border:1px solid #bdceca;padding:4px 7px;text-align:left;overflow-wrap:anywhere}
+ #pdfPrintArea th{background:#eaf5f2;color:#173544}
+ #pdfPrintArea tr{break-inside:avoid}
+}
+.file-toolbar{background:white;border:1px solid #d2e4e1;padding:14px 16px;border-radius:12px;margin-bottom:10px;display:grid;gap:10px}.file-header{display:flex;gap:12px;align-items:center}.file-header label{font-weight:700;font-size:14px;white-space:nowrap}.file-header input{flex:1;width:100%;max-width:none;min-width:0;font-weight:600}.file-actions{display:flex;flex-wrap:wrap;gap:8px}.file-actions button{white-space:nowrap;padding:9px 16px}.file-actions #exportPdf{margin-left:auto}.sample-row{border-top:1px solid #e3edeb;padding-top:10px;display:flex;gap:12px;align-items:center}.sample-row label{font-size:13px;color:#476a70;white-space:nowrap}.sample-row select{flex:1;min-width:0;max-width:390px;padding:8px 12px}@media(max-width:530px){.file-actions #exportPdf{margin-left:0}.file-actions button{flex:1}.sample-row{align-items:stretch;flex-direction:column;gap:6px}.sample-row select{max-width:none}}
+.file-feedback{font-size:13px;padding:8px 11px;border-radius:8px;background:#fff2e8;color:#964b0b;margin-top:-4px;width:fit-content;max-width:100%}.file-feedback.success{background:#e5f7ee;color:#186239}.file-feedback.error{background:#fff0ed;color:#962c22}
+.save-choices{border:1px solid #b8dbd4;background:#f5fbf9;border-radius:10px;padding:12px;display:grid;gap:9px;max-width:540px}
+.save-choices strong{font-size:14px;color:#174d4c}.save-choice-buttons{display:flex;flex-wrap:wrap;gap:8px}.save-choice-buttons button{white-space:normal}
+.save-choice-buttons button:first-child,.save-choice-buttons button:nth-child(2){background:#e3f3ef;border-color:#a4cbc3;font-weight:650}
+@media(max-width:500px){.save-choice-buttons{flex-direction:column}}
+
+.opened-name{display:inline-block;max-width:330px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;color:#17565a;padding:7px 10px;background:#eff7f5;border-radius:8px;align-self:center}
+.sample-row{display:block}.sample-row #sampleButton{font-weight:700;border-color:#b8d9d2;color:#174d4c}.sample-panel{display:flex;align-items:center;gap:10px;margin-top:9px}.sample-panel select{flex:1;min-width:0;max-width:390px}
+@media(max-width:600px){.opened-name{max-width:100%;width:100%}.sample-panel{flex-direction:column;align-items:stretch}.sample-panel select{max-width:none}}
+/* 例題はツールバー右端のプルダウンから直接選ぶ */
+.file-actions .opened-name{flex:0 1 230px;min-width:160px;padding:9px 10px;border:1px solid #b8d9d2;border-radius:8px;background:#fff;color:#174d4c;font-weight:600}.file-actions .sample-dropdown{margin-left:auto;flex:0 1 230px;max-width:230px;min-width:150px;padding:9px 30px 9px 12px;cursor:pointer;border:1px solid #b8d9d2;border-radius:8px;background:#fff;color:#174d4c;font-weight:700;font-size:14px}
+@media(max-width:650px){.file-actions .opened-name{flex:0 1 230px;min-width:160px;padding:9px 10px;border:1px solid #b8d9d2;border-radius:8px;background:#fff;color:#174d4c;font-weight:600}.file-actions .sample-dropdown{margin-left:0;flex:1 1 100%;max-width:none}.opened-name{flex:1 1 auto;width:auto;max-width:none}}
+
+/* 現在の変数（左）とトレース表（右）を同時に表示 */
+.trace-side-by-side{display:grid;grid-template-columns:minmax(180px, 0.9fr) minmax(0, 2.1fr);gap:12px;align-items:start;margin-top:12px}
+.trace-side-by-side .current-vars{margin-top:0;min-width:0;overflow:auto}
+.trace-side-by-side .tracepanel{min-width:0;padding:10px;border:1px solid #d5e7e3;border-radius:10px;background:#fff}
+.trace-side-by-side .tracepanel h2{font-size:16px}
+.trace-side-by-side .tracepanel .history{max-height:285px}
+.trace-side-by-side .variable-table table{min-width:0;width:max-content}
+.trace-side-by-side .variable-table th,.trace-side-by-side .variable-table td{min-width:75px;padding:7px 10px}
+@media(max-width:650px){.trace-side-by-side{grid-template-columns:1fr}.trace-side-by-side .current-vars{width:100%}}
+
+/* Ver.20: トレースを内部スクロールなしで全幅に収める */
+.trace-side-by-side{grid-template-columns:minmax(155px, 1fr) minmax(0, 2.8fr)}
+.trace-side-by-side .tracepanel .history{max-height:none;overflow:visible;width:100%;border:0}
+.trace-side-by-side .tracepanel .history table{width:100%;min-width:0;max-width:100%;table-layout:auto;font-size:12px}
+.trace-side-by-side .tracepanel .history th,.trace-side-by-side .tracepanel .history td{min-width:0!important;padding:5px 5px;white-space:normal;overflow-wrap:anywhere;word-break:normal}
+.trace-side-by-side .tracepanel .history th:last-child,.trace-side-by-side .tracepanel .history td:last-child{min-width:0!important;width:38%;white-space:pre-wrap}
+.trace-side-by-side .tracepanel .history th:first-child{width:55px}
+.trace-heading{display:flex;align-items:center;flex-wrap:wrap;gap:7px 12px;margin-bottom:9px}
+.trace-heading h2{margin:0;white-space:nowrap}
+.trace-legend{font-size:11px;color:#49636c;line-height:1.5}
+.legend-green{color:#147344}.legend-blue{color:#1761ad}
+@media(max-width:650px){.trace-side-by-side{grid-template-columns:1fr}}
+.open-group{display:flex;flex-direction:column;align-items:flex-start;gap:4px}.open-feedback{font-size:11px;line-height:1.3;color:#186239;max-width:220px;overflow-wrap:anywhere}.open-feedback.error{color:#962c22;background:transparent;padding:0}.editor summary{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 12px}.editor-hint{font-size:12px;font-weight:400;color:#567176}
+
+/* Ver.29: 画面上部の通知を一箇所に集約 */
+.file-toolbar{display:flex;flex-direction:column;gap:6px;padding:12px 14px}
+.file-actions{display:grid;grid-template-columns:max-content max-content max-content minmax(130px,1fr) max-content;gap:10px;align-items:center;width:100%}
+.file-actions button{padding:10px 14px;min-height:43px}
+.file-actions #openedName{display:block;width:100%;min-width:0;max-width:none;flex:none;align-self:center;height:43px;font-size:15px}
+.file-actions #sample{margin:0;max-width:none;min-width:155px;width:190px;flex:none;height:43px;font-size:14px}
+.file-toolbar .open-feedback,.file-toolbar .file-feedback{display:block;width:fit-content;max-width:100%;margin:0;padding:3px 8px;font-size:12px;line-height:1.4;border-radius:5px;overflow-wrap:anywhere}
+.file-toolbar .open-feedback{color:#186239;background:#e5f7ee}
+.file-toolbar .open-feedback.hidden,.file-toolbar .file-feedback.hidden{display:none!important}
+@media(max-width:760px){
+ .file-actions{grid-template-columns:max-content max-content max-content minmax(0,1fr)}
+ .file-actions #sample{grid-column:1/-1;width:100%;min-width:0}
+}
+@media(max-width:480px){
+ .file-actions{grid-template-columns:repeat(3,minmax(0,max-content));gap:7px}
+ .file-actions button{padding:9px 12px}
+ .file-actions #openedName{grid-column:1/-1}
+ .file-actions #sample{grid-column:1/-1}
+}
+
+.file-toolbar #fileFeedback:not(.hidden){display:inline-block!important;align-self:flex-start;visibility:visible;opacity:1}
+.build-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.build-controls .status{margin:0;flex:0 1 auto;min-width:0}.build-controls #build{flex:none}
+</style>
+</head>
+<body>
+<header><div><h1>Python変数トレース</h1><small>INNOVIA Base 教材</small></div><a href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog" style="color:#fff;text-decoration:underline;margin-left:auto;align-self:center;font-size:14px">教材一覧へ戻る ↗</a></header>
+<main>
+<div class="file-toolbar" aria-label="ファイル操作">
+  <div class="file-actions">
+    <button type="button" id="newCode" class="primary">＋ 新規</button>
+    <button type="button" id="savePy">保存</button>
+    <button type="button" id="openPy">開く</button>
+    <input id="openedName" class="opened-name" type="text" value="基本：代入と計算" placeholder="プログラム名を入力" aria-label="プログラム名（編集できます）" autocomplete="off">
+    <select id="sample" class="sample-dropdown" aria-label="例題を使う">
+      <option value="" selected>例題を使う ▾</option>
+      <option value="basic">基本：代入と計算</option>
+      <option value="loop">繰り返し：for と range</option>
+      <option value="branch">条件分岐：if / else</option>
+      <option value="while">繰り返し：while</option>
+      <option value="nested">応用：条件分岐と繰り返し</option>
+    </select>
+  </div>
+  <div id="saveChoices" class="save-choices hidden" aria-label="保存形式を選択">
+    <strong>保存する形式を選んでください</strong>
+    <div class="save-choice-buttons">
+      <button type="button" id="choosePy">Pythonファイル（.py）</button>
+      <button type="button" id="choosePdf">PDF</button>
+      <button type="button" id="cancelSave">キャンセル</button>
+    </div>
+  </div>
+  <div id="fileFeedback" class="file-feedback hidden" role="status" aria-live="polite"></div>
+  <input type="file" id="fileInput" accept=".py,text/x-python,text/plain" style="display:none" aria-label="Pythonファイルを選択">
+
+</div>
+<details class="panel editor"><summary><span class="editor-heading">① Pythonプログラムを表示・編集する</span><span class="editor-hint">Tabキーでスペース4個を入力できます。</span></summary><textarea id="source" spellcheck="false" aria-label="Pythonコード入力欄"></textarea><div class="buttons build-controls"><button class="primary" id="build">コードをセット</button><div id="msg" class="status" role="status">例題を選んで実行してみましょう。</div></div></details>
+<section class="panel execution"><h2>② 1行ずつ実行</h2><div class="codeView" id="codeView" aria-label="行番号付きコード"></div><div class="stepbar"><button id="prev">◀ 1つ戻る</button><button class="primary" id="next">次の1ステップ ▶</button><button id="all">最後まで</button><button id="reset">最初から</button></div><div id="position" class="muted"></div><div class="trace-side-by-side"><div class="current-vars"><strong>現在の変数</strong><div class="variable-table"><table><thead id="varsHead"></thead><tbody id="vars"></tbody></table></div><p id="emptyVars" class="muted">まだ変数はありません。</p></div>
+<section class="tracepanel"><div class="sectionhead trace-heading"><h2>③ トレース表</h2><span class="trace-legend"><strong class="legend-green">緑色</strong>：変化した値、<strong class="legend-blue">青色</strong>：現在のステップ</span></div><div class="history" id="historyScroll"><table><thead id="traceHead"></thead><tbody id="history"></tbody></table></div></section></div>
+</section>
+
+</main>
+<section id="pdfPrintArea" aria-hidden="true"></section>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const samples={basic:'x = 3\ny = 2\nx = x + y\ny = x * 2\nprint(y)',loop:'total = 0\nfor i in range(1, 5):\n    total = total + i\nprint(total)',branch:'score = 75\nif score >= 80:\n    result = "合格"\nelse:\n    result = "もう少し"\nprint(result)',while:'n = 1\nwhile n < 10:\n    n = n * 2\nprint(n)',nested:'total = 0\nfor i in range(1, 6):\n    if i % 2 == 0:\n        total = total + i\nprint(total)'};
+let steps=[],index=0,lines=[],lastSource='';
+function format(v){if(typeof v==='string')return JSON.stringify(v);if(typeof v==='boolean')return v?'True':'False';if(v===null)return 'None';return String(v)}
+function reprVars(v){return Object.keys(v).sort().map(k=>k+'='+format(v[k])).join(', ')||'—'}
+function same(a,b){return JSON.stringify(a)===JSON.stringify(b)}
+function tokenize(s){let out=[],re=/\s+|(?:\d+(?:\.\d*)?|\.\d+)|(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(?:==|!=|<=|>=|\/\/|\*\*)|[A-Za-z_]\w*|./gy,m;while((m=re.exec(s))){let t=m[0];if(/^\s+$/.test(t))continue;if(!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(t)&&!/^['"]/.test(t)&&!/^(?:==|!=|<=|>=|\/\/|\*\*|[A-Za-z_]\w*|[+*\/%()\-,<>])$/.test(t))throw Error('未対応の記号: '+t);out.push(t)}return out}
+function expr(s,env){let ts=tokenize(s),p=0;function peek(){return ts[p]}function take(){return ts[p++]}function parse(min=0){let t=take(),lhs;if(t===undefined)throw Error('式が途中で終わっています');if(t==='('){lhs=parse();if(take()!==')')throw Error(') が必要です')}else if(t==='-'||t==='+'||t==='not'){let v=parse(t==='not'?3:8);lhs=t==='not'?!v:t==='-'?-v:+v}else if(/^\d/.test(t)||/^\.\d/.test(t))lhs=Number(t);else if(/^['"]/.test(t)){try{lhs=JSON.parse(t[0]==='"'?t:'"'+t.slice(1,-1).replace(/\\'/g,"'").replace(/"/g,'\\"')+'"')}catch{throw Error('文字列を確認してください')}}else if(t==='True')lhs=true;else if(t==='False')lhs=false;else if(t==='None')lhs=null;else if(/^[A-Za-z_]\w*$/.test(t)){if(!Object.prototype.hasOwnProperty.call(env,t))throw Error('未定義の変数: '+t);lhs=env[t]}else throw Error('式に使えない記号: '+t);
+const prec={'or':1,'and':2,'==':3,'!=':3,'<':3,'>':3,'<=':3,'>=':3,'+':4,'-':4,'*':5,'/':5,'//':5,'%':5,'**':7};while(prec[peek()]!==undefined&&prec[peek()]>=min){let op=take(),v=parse(prec[op]+(op==='**'?0:1));switch(op){case 'or':lhs=Boolean(lhs||v);break;case 'and':lhs=Boolean(lhs&&v);break;case '==':lhs=lhs===v;break;case '!=':lhs=lhs!==v;break;case '<':lhs=lhs<v;break;case '<=':lhs=lhs<=v;break;case '>':lhs=lhs>v;break;case '>=':lhs=lhs>=v;break;case '+':lhs=lhs+v;break;case '-':lhs=lhs-v;break;case '*':lhs=lhs*v;break;case '/':if(v===0)throw Error('0で割ることはできません');lhs=lhs/v;break;case '//':if(v===0)throw Error('0で割ることはできません');lhs=Math.floor(lhs/v);break;case '%':if(v===0)throw Error('0で割ることはできません');lhs=((lhs%v)+v)%v;break;case '**':lhs=lhs**v;break}if(typeof lhs==='number'&&!Number.isFinite(lhs))throw Error('計算結果が大きすぎます')}return lhs}let result=parse();if(p!==ts.length)throw Error('式を読み取れません: '+ts.slice(p).join(' '));return result}
+function splitArgs(s){let dep=0,q='',start=0,out=[];for(let i=0;i<s.length;i++){let c=s[i];if(q){if(c==='\\')i++;else if(c===q)q='';continue}if(c==='"'||c==="'")q=c;else if(c==='(')dep++;else if(c===')')dep--;else if(c===','&&dep===0){out.push(s.slice(start,i).trim());start=i+1}}out.push(s.slice(start).trim());return out.filter(x=>x!=='')}
+function parseCode(source){
+ const raw=source.replace(/\r/g,'').split('\n');
+ const ls=raw.map((s,i)=>{const indent=(s.match(/^ */)||[''])[0].length;if(s.includes('\t'))throw Error((i+1)+'行目: インデントにはスペースを使ってください');if(indent%4)throw Error((i+1)+'行目: インデントはスペース4個単位です');return{text:s.trim(),indent,line:i+1}});
+ function block(start,depth){let pos=start,nodes=[];
+  while(pos<ls.length){let x=ls[pos],t=x.text;
+   if(!t||t.startsWith('#')){pos++;continue}
+   if(x.indent<depth)break;
+   if(x.indent>depth)throw Error(x.line+'行目: インデントが不正です');
+   if(/^elif\b/.test(t)||t==='else:')break;
+   let node={line:x.line,text:t};
+   let control=t.match(/^(if|while)\s+(.+):$/);
+   let forMatch=t.match(/^for\s+([A-Za-z_]\w*)\s+in\s+range\((.*)\):$/);
+   if(control){
+    node.kind=control[1];node.cond=control[2];
+    let child=block(pos+1,depth+4);if(!child.nodes.length)throw Error(x.line+'行目: ブロックが空です');
+    node.body=child.nodes;pos=child.pos;
+    if(node.kind==='if'){
+     node.branches=[{cond:node.cond,body:node.body,line:x.line,text:t}];
+     while(pos<ls.length){let nx=ls[pos];if(!nx.text||nx.text.startsWith('#')){pos++;continue}if(nx.indent!==depth)break;
+      let elif=nx.text.match(/^elif\s+(.+):$/),isElse=nx.text==='else:';
+      if(!elif&&!isElse)break;
+      let c=block(pos+1,depth+4);if(!c.nodes.length)throw Error(nx.line+'行目: ブロックが空です');
+      node.branches.push({cond:isElse?null:elif[1],body:c.nodes,line:nx.line,text:nx.text});pos=c.pos;
+      if(isElse)break;
+     }
+    }
+   }else if(forMatch){
+    node.kind='for';node.variable=forMatch[1];node.args=splitArgs(forMatch[2]);
+    if(node.args.length<1||node.args.length>3)throw Error(x.line+'行目: rangeの引数は1～3個です');
+    let c=block(pos+1,depth+4);if(!c.nodes.length)throw Error(x.line+'行目: ブロックが空です');node.body=c.nodes;pos=c.pos;
+   }else if(/^print\s*\(.*\)$/.test(t)){
+    node.kind='print';node.args=splitArgs(t.replace(/^print\s*\(/,'').slice(0,-1));pos++;
+   }else{
+    let assignment=t.match(/^([A-Za-z_]\w*)\s*=\s*(.+)$/);
+    if(!assignment)throw Error(x.line+'行目: 対応していない文です: '+t);
+    node.kind='assign';node.variable=assignment[1];node.value=assignment[2];pos++;
+   }
+   nodes.push(node);
+  }
+  return{nodes,pos};
+ }
+ let result=block(0,0),leftover=ls.slice(result.pos).find(x=>x.text&&!x.text.startsWith('#'));
+ if(leftover)throw Error(leftover.line+'行目: elif / else またはインデントの位置を確認してください');
+ return{nodes:result.nodes,raw};
+}
+function buildSteps(source){let ast=parseCode(source),env={},output=[],trace=[{line:0,text:'開始前',vars:{},output:[],changed:[]}],n=0;function record(line,text,old){n++;if(n>500)throw Error('500ステップを超えました。無限ループなどを確認してください');let changed=Object.keys(env).filter(k=>!same(env[k],old[k]));trace.push({line,text,vars:{...env},output:[...output],changed})}function run(nodes){for(let node of nodes){let old={...env};try{if(node.kind==='assign'){env[node.variable]=expr(node.value,env);record(node.line,node.text,old)}else if(node.kind==='print'){output.push(node.args.map(a=>formatPrint(expr(a,env))).join(' '));record(node.line,node.text,old)}else if(node.kind==='if'){let hit=false;for(let b of node.branches){let ok=b.cond===null||Boolean(expr(b.cond,env));record(b.line,b.text,old);if(ok){run(b.body);hit=true;break}}}else if(node.kind==='while'){let c=0;while(true){let ok=Boolean(expr(node.cond,env));record(node.line,node.text,{...env});if(!ok)break;if(++c>500)throw Error('whileの繰り返し回数が多すぎます');run(node.body)}}else if(node.kind==='for'){let args=node.args.map(a=>expr(a,env));if(!args.every(a=>Number.isInteger(a)))throw Error('rangeには整数を指定してください');let [start,end,step]=args.length===1?[0,args[0],1]:args.length===2?[args[0],args[1],1]:args;if(step===0)throw Error('rangeの増分は0にできません');let count=0;for(let i=start;step>0?i<end:i>end;i+=step){let beforeLoop={...env};env[node.variable]=i;record(node.line,node.text,beforeLoop);if(++count>500)throw Error('forの繰り返し回数が多すぎます');run(node.body)}record(node.line,node.text+'（終了）',{...env})}}catch(e){if(!/^\d+行目:/.test(e.message))throw Error(node.line+'行目: '+e.message);throw e}}}function formatPrint(v){return typeof v==='string'?v:format(v)}run(ast.nodes);return{trace,raw:ast.raw}}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function message(m,type=''){ $('msg').className='status '+type;$('msg').textContent=m}
+function fileFeedback(m,type='error'){$('fileFeedback').className='file-feedback '+type;$('fileFeedback').textContent=m}
+function clearFileFeedback(){$('fileFeedback').className='file-feedback hidden';$('fileFeedback').textContent=''}
+function compile(){try{let result=buildSteps($('source').value);steps=result.trace;lines=result.raw;index=0;lastSource=$('source').value;message('解析完了。'+(steps.length-1)+'ステップで実行できます。','success');render()}catch(e){steps=[];lines=$('source').value.split('\n');index=0;message(e.message,'error');render()}}
+function render(){let s=steps[index]||{vars:{},changed:[],output:[],line:0,text:'開始前'};let next=steps[index+1];$('codeView').innerHTML=lines.map((line,i)=>`<div class="line ${s.line===i+1?'done':''} ${next&&next.line===i+1?'active':''}"><span class="num">${i+1}</span><span class="src">${escapeHTML(line)||' '}</span></div>`).join('');let names=Object.keys(s.vars).sort();$('varsHead').innerHTML='<tr>'+names.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'</tr>';$('vars').innerHTML='<tr>'+names.map(k=>'<td class="'+(s.changed.includes(k)?'changedCell':'')+'">'+escapeHTML(format(s.vars[k]))+'</td>').join('')+'</tr>';$('emptyVars').classList.toggle('hidden',names.length>0);let traceNames=Array.from(new Set(steps.flatMap(st=>Object.keys(st.vars)))).sort();$('traceHead').innerHTML='<tr><th>ステップ</th>'+traceNames.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'<th>実行内容</th></tr>';$('history').innerHTML=steps.slice(1,index+1).map((t,i)=>'<tr class="'+(i+1===index?'current':'')+'"><td>'+(i+1)+'</td>'+traceNames.map(k=>'<td class="'+(t.changed.includes(k)?'changedCell':'')+'">'+(Object.prototype.hasOwnProperty.call(t.vars,k)?escapeHTML(format(t.vars[k])):'—')+'</td>').join('')+'<td>'+escapeHTML(t.text)+'</td></tr>').join('');$('prev').disabled=index===0;$('next').disabled=!next;$('all').disabled=!next;$('position').textContent='ステップ '+index+' / '+Math.max(0,steps.length-1)+(next?' · 次に実行する行：'+next.line+'行目':' · 実行終了');}
+function step(){if(index<steps.length-1){index++;render()}}
+$('build').addEventListener('click',compile);$('reset').addEventListener('click',compile);$('prev').addEventListener('click',()=>{if(index>0){index--;render()}});$('next').addEventListener('click',step);$('all').addEventListener('click',()=>{index=steps.length-1;render()});$('sample').addEventListener('change',()=>{if(!$('sample').value)return;$('source').value=samples[$('sample').value];currentFileName=$('sample').selectedOptions[0].textContent;updateOpenedName();$('sample').value='';compile()});$('newCode').addEventListener('click',()=>{hideSaveChoices();clearFileFeedback();if($('source').value.trim()&&!confirm('新規作成しますか？ 現在のコードとトレース履歴は消去されます。'))return;currentFileName='';$('source').value='';updateOpenedName();$('openedName').focus();$('sample').selectedIndex=-1;steps=[];index=0;lines=[];lastSource='';$('source').closest('details').open=true;render();message('プログラム名を入力してから、Pythonコードを作成してください。');});function exportRows(){
+ let names=Array.from(new Set(steps.flatMap(s=>Object.keys(s.vars)))).sort();
+ let rows=[['ステップ',...names,'実行内容']];
+ steps.slice(1,index+1).forEach((s,i)=>rows.push([String(i+1),...names.map(k=>k in s.vars?format(s.vars[k]):''),s.text]));
+ return rows;
+}
+function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+$('choosePdf').addEventListener('click',()=>{
+ hideSaveChoices();
+ clearFileFeedback();
+ const rows=exportRows();
+ const table='<table><thead><tr>'+rows[0].map(c=>'<th>'+escapeHtml(c)+'</th>').join('')+'</tr></thead><tbody>'+rows.slice(1).map(r=>'<tr>'+r.map(c=>'<td>'+escapeHtml(c)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+ syncDocumentTitle();
+ $('pdfPrintArea').innerHTML='<h1>Python変数トレース</h1><h2>プログラム</h2><pre>'+escapeHtml($('source').value)+'</pre>'+(index>0?'<h2>トレース表（ステップ '+index+' まで）</h2>'+table:'');
+ window.print();
+ // PDF保存はブラウザの画面で確定するため、完了と断定しない。
+ fileFeedback('PDF保存画面を開きました。','success');
+});
+function syncDocumentTitle(){
+ const name=String($('openedName').value||'').trim().replace(/\.(?:py|pdf)$/i,'').replace(/[\\/:*?"<>|\x00-\x1F]/g,'_').replace(/[. ]+$/g,'');
+ document.title=name||'Python変数トレース';
+}
+function updateOpenedName(){$('openedName').value=currentFileName;$('openedName').title=currentFileName||'プログラム名を入力';syncDocumentTitle()}
+$('openedName').addEventListener('input',()=>{currentFileName=$('openedName').value;syncDocumentTitle()});
+function hideSaveChoices(){$('saveChoices').classList.add('hidden');$('savePy').setAttribute('aria-expanded','false')}
+$('savePy').setAttribute('aria-expanded','false');
+$('savePy').setAttribute('aria-controls','saveChoices');
+$('savePy').addEventListener('click',()=>{
+ const showing=$('saveChoices').classList.contains('hidden');
+ clearFileFeedback();$('saveChoices').classList.toggle('hidden',!showing);
+ $('savePy').setAttribute('aria-expanded',String(showing));
+});
+$('cancelSave').addEventListener('click',hideSaveChoices);
+let currentFileName='基本：代入と計算';
+function safePyFileName(raw){let name=String(raw||'').trim().replace(/\.py$/i,'').replace(/[\\/:*?"<>|\x00-\x1F]/g,'_').replace(/[. ]+$/g,'');return(name||'python_program')+'.py'}
+$('choosePy').addEventListener('click',async()=>{
+ hideSaveChoices();clearFileFeedback();
+ if(!currentFileName.trim()){fileFeedback('先にプログラム名を入力してください。','error');$('openedName').focus();return}
+ const name=safePyFileName(currentFileName),content=$('source').value;
+ // 「フォルダーの選択」ではなく「名前を付けて保存」を表示する。
+ // 同じ id を指定すると、対応ブラウザは前回使ったフォルダを初期候補にできる。
+ if(typeof window.showSaveFilePicker==='function'){
+  try{
+   const handle=await window.showSaveFilePicker({
+    id:'innovia-python-projects',
+    suggestedName:name,
+    types:[{description:'Pythonプログラム (.py)',accept:{'text/x-python':['.py']}}]
+   });
+   const writable=await handle.createWritable();
+   await writable.write(content);await writable.close();
+   currentFileName=handle.name.replace(/\.py$/i,'');updateOpenedName();
+   fileFeedback('保存しました。','success');
+   return;
+  }catch(err){
+   if(err.name==='AbortError')return;
+   fileFeedback('直接保存が利用できないため、ダウンロード方式に切り替えます。');
+  }
+ }
+ // 最終手段はダウンロード。保存先はブラウザ設定に従う。
+ const blob=new Blob([content],{type:'text/x-python;charset=utf-8'});
+ const url=URL.createObjectURL(blob);const link=document.createElement('a');
+ link.href=url;link.download=name;document.body.appendChild(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+ fileFeedback('保存を開始しました。','success');
+});
+$('openPy').addEventListener('click',()=>{hideSaveChoices();clearFileFeedback();$('fileInput').value='';$('fileInput').click()});
+$('fileInput').addEventListener('change',async(e)=>{
+ const file=e.target.files&&e.target.files[0];if(!file)return;
+ if($('source').value.trim()&&!confirm('現在のコードを、選択したファイルの内容に置き換えますか？ 未保存の変更は失われます。'))return;
+ try{
+  const code=await file.text();
+  $('source').value=code.replace(/^\uFEFF/,'');
+  currentFileName=file.name.replace(/\.py$/i,'');updateOpenedName();
+  $('sample').selectedIndex=-1;
+  $('source').closest('details').open=true;
+  compile();
+  fileFeedback('読み込みました。','success');
+ }catch(err){fileFeedback('読み込めませんでした: '+err.message,'error')}
+});
+
+updateOpenedName();
+$('source').addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();let a=e.target,p=a.selectionStart;a.setRangeText('    ',p,a.selectionEnd,'end')}});$('source').value=samples.basic;compile();
+})();
+</script>
+</body></html>

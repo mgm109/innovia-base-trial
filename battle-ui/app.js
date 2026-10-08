@@ -5,7 +5,7 @@ const requestedCourse=new URLSearchParams(location.search).get('course');
 const course=['binary','logic'].includes(requestedCourse)?requestedCourse:'';
 const courseTitle=()=>state?.title||(course==='binary'?'2進数バトル':course==='logic'?'論理回路バトル':'クイズバトル');
 const courseCount=()=>state?.total||(course==='binary'?6:5);
-function showCourseTitle(){document.title=courseTitle()+'｜情報Ⅰ';document.querySelector('.brand span').textContent=courseTitle();}
+function showCourseTitle(){document.title=courseTitle()+'｜情報Ⅰ';const label=document.querySelector('.brand span');if(label)label.textContent=courseTitle();}
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let info,session,state,stream,selectedAvatar='🐶',offset=0,lastView='',connected=false,base=Innovia.root.href.replace(/\/$/,'');

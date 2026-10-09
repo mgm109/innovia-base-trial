@@ -144,8 +144,51 @@ function format(v){if(typeof v==='string')return JSON.stringify(v);if(typeof v==
 function reprVars(v){return Object.keys(v).sort().map(k=>k+'='+format(v[k])).join(', ')||'—'}
 function same(a,b){return JSON.stringify(a)===JSON.stringify(b)}
 function tokenize(s){let out=[],re=/\s+|(?:\d+(?:\.\d*)?|\.\d+)|(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(?:==|!=|<=|>=|\/\/|\*\*)|[A-Za-z_]\w*|./gy,m;while((m=re.exec(s))){let t=m[0];if(/^\s+$/.test(t))continue;if(!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(t)&&!/^['"]/.test(t)&&!/^(?:==|!=|<=|>=|\/\/|\*\*|[A-Za-z_]\w*|[+*\/%()\-,<>])$/.test(t))throw Error('未対応の記号: '+t);out.push(t)}return out}
-function expr(s,env){let ts=tokenize(s),p=0;function peek(){return ts[p]}function take(){return ts[p++]}function parse(min=0){let t=take(),lhs;if(t===undefined)throw Error('式が途中で終わっています');if(t==='('){lhs=parse();if(take()!==')')throw Error(') が必要です')}else if(t==='-'||t==='+'||t==='not'){let v=parse(t==='not'?3:8);lhs=t==='not'?!v:t==='-'?-v:+v}else if(/^\d/.test(t)||/^\.\d/.test(t))lhs=Number(t);else if(/^['"]/.test(t)){try{lhs=JSON.parse(t[0]==='"'?t:'"'+t.slice(1,-1).replace(/\\'/g,"'").replace(/"/g,'\\"')+'"')}catch{throw Error('文字列を確認してください')}}else if(t==='True')lhs=true;else if(t==='False')lhs=false;else if(t==='None')lhs=null;else if(/^[A-Za-z_]\w*$/.test(t)){if(!Object.prototype.hasOwnProperty.call(env,t))throw Error('未定義の変数: '+t);lhs=env[t]}else throw Error('式に使えない記号: '+t);
-const prec={'or':1,'and':2,'==':3,'!=':3,'<':3,'>':3,'<=':3,'>=':3,'+':4,'-':4,'*':5,'/':5,'//':5,'%':5,'**':7};while(prec[peek()]!==undefined&&prec[peek()]>=min){let op=take(),v=parse(prec[op]+(op==='**'?0:1));switch(op){case 'or':lhs=Boolean(lhs||v);break;case 'and':lhs=Boolean(lhs&&v);break;case '==':lhs=lhs===v;break;case '!=':lhs=lhs!==v;break;case '<':lhs=lhs<v;break;case '<=':lhs=lhs<=v;break;case '>':lhs=lhs>v;break;case '>=':lhs=lhs>=v;break;case '+':lhs=lhs+v;break;case '-':lhs=lhs-v;break;case '*':lhs=lhs*v;break;case '/':if(v===0)throw Error('0で割ることはできません');lhs=lhs/v;break;case '//':if(v===0)throw Error('0で割ることはできません');lhs=Math.floor(lhs/v);break;case '%':if(v===0)throw Error('0で割ることはできません');lhs=((lhs%v)+v)%v;break;case '**':lhs=lhs**v;break}if(typeof lhs==='number'&&!Number.isFinite(lhs))throw Error('計算結果が大きすぎます')}return lhs}let result=parse();if(p!==ts.length)throw Error('式を読み取れません: '+ts.slice(p).join(' '));return result}
+function expr(s,env){
+ const ts=tokenize(s);let p=0;
+ const prec={'or':1,'and':2,'==':3,'!=':3,'<':3,'>':3,'<=':3,'>=':3,'+':4,'-':4,'*':5,'/':5,'//':5,'%':5,'**':7};
+ const peek=()=>ts[p],take=()=>ts[p++];
+ // Parse skipped operands too, but do not evaluate their names or arithmetic.
+ function parse(min=0,execute=true){
+  const t=take();let lhs;
+  if(t===undefined)throw Error('式が途中で終わっています');
+  if(t==='('){lhs=parse(0,execute);if(take()!==')')throw Error(') が必要です');}
+  else if(t==='-'||t==='+'||t==='not'){
+   // Python: power binds more tightly than a unary sign on its left.
+   const v=parse(t==='not'?3:6,execute);if(execute)lhs=t==='not'?!v:t==='-'?-v:+v;
+  }
+  else if(/^\d/.test(t)||/^\.\d/.test(t)){if(execute)lhs=Number(t);}
+  else if(/^['"]/.test(t)){
+   try{const value=JSON.parse(t[0]==='"'?t:'"'+t.slice(1,-1).replace(/\\'/g,"'").replace(/"/g,'\\"')+'"');if(execute)lhs=value;}catch{throw Error('文字列を確認してください');}
+  }
+  else if(t==='True'){if(execute)lhs=true;}
+  else if(t==='False'){if(execute)lhs=false;}
+  else if(t==='None'){if(execute)lhs=null;}
+  else if(/^[A-Za-z_]\w*$/.test(t)&&!['and','or'].includes(t)){
+   if(execute){if(!Object.prototype.hasOwnProperty.call(env,t))throw Error('未定義の変数: '+t);lhs=env[t];}
+  }
+  else throw Error('式に使えない記号: '+t);
+  while(prec[peek()]!==undefined&&prec[peek()]>=min){
+   const op=take(),skip=execute&&((op==='and'&&!lhs)||(op==='or'&&!!lhs));
+   const v=parse(prec[op]+(op==='**'?0:1),execute&&!skip);
+   if(!execute||skip)continue;
+   switch(op){
+    // Python and/or return the selected operand, rather than a Boolean cast.
+    case 'or':case 'and':lhs=v;break;
+    case '==':lhs=lhs===v;break;case '!=':lhs=lhs!==v;break;
+    case '<':lhs=lhs<v;break;case '>':lhs=lhs>v;break;case '<=':lhs=lhs<=v;break;case '>=':lhs=lhs>=v;break;
+    case '+':lhs=lhs+v;break;case '-':lhs=lhs-v;break;case '*':lhs=lhs*v;break;
+    case '/':if(v===0)throw Error('0で割ることはできません');lhs=lhs/v;break;
+    case '//':if(v===0)throw Error('0で割ることはできません');lhs=Math.floor(lhs/v);break;
+    case '%':if(v===0)throw Error('0で割ることはできません');lhs=((lhs%v)+v)%v;break;
+    case '**':lhs=lhs**v;break;
+   }
+   if(typeof lhs==='number'&&!Number.isFinite(lhs))throw Error('計算結果が大きすぎます');
+  }
+  return lhs;
+ }
+ const result=parse();if(p!==ts.length)throw Error('式を読み取れません: '+ts.slice(p).join(' '));return result;
+}
 function splitArgs(s){let dep=0,q='',start=0,out=[];for(let i=0;i<s.length;i++){let c=s[i];if(q){if(c==='\\')i++;else if(c===q)q='';continue}if(c==='"'||c==="'")q=c;else if(c==='(')dep++;else if(c===')')dep--;else if(c===','&&dep===0){out.push(s.slice(start,i).trim());start=i+1}}out.push(s.slice(start).trim());return out.filter(x=>x!=='')}
 function parseCode(source){
  const raw=source.replace(/\r/g,'').split('\n');

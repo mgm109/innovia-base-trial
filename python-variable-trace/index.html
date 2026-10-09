@@ -200,17 +200,83 @@ $('build').addEventListener('click',compile);$('reset').addEventListener('click'
  return rows;
 }
 function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-$('choosePdf').addEventListener('click',()=>{
- hideSaveChoices();
- clearFileFeedback();
- const rows=exportRows();
- const table='<table><thead><tr>'+rows[0].map(c=>'<th>'+escapeHtml(c)+'</th>').join('')+'</tr></thead><tbody>'+rows.slice(1).map(r=>'<tr>'+r.map(c=>'<td>'+escapeHtml(c)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
- syncDocumentTitle();
- $('pdfPrintArea').innerHTML='<h1>Python変数トレース</h1><h2>プログラム</h2><pre>'+escapeHtml($('source').value)+'</pre>'+(index>0?'<h2>トレース表（ステップ '+index+' まで）</h2>'+table:'');
- window.print();
- // PDF保存はブラウザの画面で確定するため、完了と断定しない。
- fileFeedback('PDF保存画面を開きました。','success');
-});
+ function pdfTextLines(rows){
+  const lines=['Python変数トレース','プログラム名: '+(currentFileName||'python_program'),'','[Pythonプログラム]'];
+  $('source').value.replace(/\r/g,'').split('\n').forEach((line,i)=>lines.push(String(i+1).padStart(3,' ')+'  '+line));
+  if(index>0){
+   lines.push('','[トレース表（ステップ '+index+' まで）]');
+   rows.forEach(row=>lines.push(row.map(cell=>String(cell)).join('    ')));
+  }
+  return lines;
+ }
+ function makePdfFromCanvases(canvases){
+  const enc=new TextEncoder(),objects=[],pages=[],parts=[],offsets=[0];let length=0;
+  const add=value=>{objects.push(value);return objects.length};
+  const addText=text=>{const bytes=enc.encode(text);parts.push(bytes);length+=bytes.length};
+  const addBytes=bytes=>{parts.push(bytes);length+=bytes.length};
+  const catalog=add(''),pagesObj=add('');
+  canvases.forEach((canvas,idx)=>{
+   const raw=atob(canvas.toDataURL('image/jpeg',.92).split(',')[1]),bytes=new Uint8Array(raw.length);
+   for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+   const image=add({type:'image',bytes,width:canvas.width,height:canvas.height});
+   const content=add({type:'content',text:'q 595 0 0 842 0 0 cm /Im'+idx+' Do Q'});
+   pages.push(add({type:'page',image,content,idx}));
+  });
+  objects[catalog-1]='<< /Type /Catalog /Pages '+pagesObj+' 0 R >>';
+  objects[pagesObj-1]='<< /Type /Pages /Kids ['+pages.map(p=>p+' 0 R').join(' ')+'] /Count '+pages.length+' >>';
+  addText('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+  objects.forEach((obj,n)=>{
+   offsets[n+1]=length;addText((n+1)+' 0 obj\n');
+   if(typeof obj==='string')addText(obj+'\n');
+   else if(obj.type==='image'){
+    addText('<< /Type /XObject /Subtype /Image /Width '+obj.width+' /Height '+obj.height+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+obj.bytes.length+' >>\nstream\n');addBytes(obj.bytes);addText('\nendstream\n');
+   }else if(obj.type==='content'){
+    const body=enc.encode(obj.text);addText('<< /Length '+body.length+' >>\nstream\n');addBytes(body);addText('\nendstream\n');
+   }else addText('<< /Type /Page /Parent '+pagesObj+' 0 R /MediaBox [0 0 595 842] /Resources << /XObject << /Im'+obj.idx+' '+obj.image+' 0 R >> >> /Contents '+obj.content+' 0 R >>\n');
+   addText('endobj\n');
+  });
+  const xref=length;addText('xref\n0 '+(objects.length+1)+'\n0000000000 65535 f \n');for(let i=1;i<offsets.length;i++)addText(String(offsets[i]).padStart(10,'0')+' 00000 n \n');addText('trailer\n<< /Size '+(objects.length+1)+' /Root '+catalog+' 0 R >>\nstartxref\n'+xref+'\n%%EOF');
+  return new Blob(parts,{type:'application/pdf'});
+ }
+ async function buildPdfBlob(rows){
+  await document.fonts.ready;
+  const width=1240,height=1754,margin=70,lineHeight=30,fontSize=22,canvases=[];let page;
+  function newPage(){const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);ctx.fillStyle='#173544';ctx.font=fontSize+'px system-ui, sans-serif';ctx.textBaseline='top';page={canvas,ctx,y:margin};canvases.push(canvas)}
+  function wrap(text,maxWidth){const result=[];let part='';for(const char of String(text)){if(char==='\n'){result.push(part);part='';continue}if(part&&page.ctx.measureText(part+char).width>maxWidth){result.push(part);part=''}part+=char}result.push(part);return result}
+  function line(text){for(const part of wrap(text,width-margin*2)){if(page.y+lineHeight>height-margin)newPage();page.ctx.fillText(part,margin,page.y);page.y+=lineHeight}}
+  newPage();
+  line('Python変数トレース');line('プログラム名: '+(currentFileName||'python_program'));line('');line('[Pythonプログラム]');
+  $('source').value.replace(/\r/g,'').split('\n').forEach((text,i)=>line(String(i+1).padStart(3,' ')+'  '+text));
+  if(index>0){
+   line('');line('[トレース表（ステップ '+index+' まで）]');
+   const columns=rows[0].length,totalWidth=width-margin*2,stepWidth=80,contentWidth=columns>2?totalWidth*.4:totalWidth-stepWidth;
+   const widths=rows[0].map((_,i)=>i===0?stepWidth:i===columns-1?contentWidth:(totalWidth-stepWidth-contentWidth)/(columns-2));
+   page.ctx.font='18px system-ui, sans-serif';
+   function row(cells,header=false){
+    const wrapped=cells.map((text,i)=>wrap(text,Math.max(8,widths[i]-16))),count=Math.max(...wrapped.map(parts=>parts.length));
+    for(let offset=0;offset<count;){
+     if(page.y+28>height-margin){newPage();page.ctx.font='18px system-ui, sans-serif'}
+     const fit=Math.min(count-offset,Math.floor((height-margin-page.y-10)/24));
+     if(fit<1){newPage();page.ctx.font='18px system-ui, sans-serif';continue}
+     const rowHeight=fit*24+10;let x=margin;
+     cells.forEach((_,i)=>{page.ctx.fillStyle=header?'#eaf5f2':'#fff';page.ctx.fillRect(x,page.y,widths[i],rowHeight);page.ctx.strokeStyle='#bdceca';page.ctx.strokeRect(x,page.y,widths[i],rowHeight);page.ctx.fillStyle='#173544';wrapped[i].slice(offset,offset+fit).forEach((text,j)=>page.ctx.fillText(text,x+8,page.y+5+j*24));x+=widths[i]});
+     page.y+=rowHeight;offset+=fit;
+    }
+   }
+   rows.forEach((cells,i)=>row(cells,i===0));
+  }
+  return makePdfFromCanvases(canvases);
+ }
+ $('choosePdf').addEventListener('click',async()=>{
+  hideSaveChoices();clearFileFeedback();syncDocumentTitle();
+  try{
+   const blob=await buildPdfBlob(exportRows()),name=safePdfFileName(currentFileName);
+   if(typeof window.showSaveFilePicker==='function'){
+    try{const handle=await window.showSaveFilePicker({id:'innovia-python-pdf',suggestedName:name,types:[{description:'PDFファイル',accept:{'application/pdf':['.pdf']}}]});const writable=await handle.createWritable();await writable.write(blob);await writable.close();fileFeedback('PDFを保存しました。','success');return}catch(err){if(err.name==='AbortError')return}
+   }
+   const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);fileFeedback('PDFの保存を開始しました。','success');
+  }catch(err){fileFeedback('PDFを作成できませんでした: '+err.message,'error')}
+ });
 function syncDocumentTitle(){
  const name=String($('openedName').value||'').trim().replace(/\.(?:py|pdf)$/i,'').replace(/[\\/:*?"<>|\x00-\x1F]/g,'_').replace(/[. ]+$/g,'');
  document.title=name||'Python変数トレース';
@@ -228,6 +294,7 @@ $('savePy').addEventListener('click',()=>{
 $('cancelSave').addEventListener('click',hideSaveChoices);
 let currentFileName='基本：代入と計算';
 function safePyFileName(raw){let name=String(raw||'').trim().replace(/\.py$/i,'').replace(/[\\/:*?"<>|\x00-\x1F]/g,'_').replace(/[. ]+$/g,'');return(name||'python_program')+'.py'}
+function safePdfFileName(raw){let name=String(raw||'').trim().replace(/\.pdf$/i,'').replace(/[\\/:*?"<>|\x00-\x1F]/g,'_').replace(/[. ]+$/g,'');return(name||'python_program')+'.pdf'}
 $('choosePy').addEventListener('click',async()=>{
  hideSaveChoices();clearFileFeedback();
  if(!currentFileName.trim()){fileFeedback('先にプログラム名を入力してください。','error');$('openedName').focus();return}

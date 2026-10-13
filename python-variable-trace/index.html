@@ -96,6 +96,8 @@
 .execution-output{display:flex;gap:0;align-items:flex-start;border-top:1px solid #d9e9e6;padding:10px 0;color:#173544}
 .output-marker{width:45px;flex:none;text-align:center;font-weight:700;line-height:1.7;user-select:none}
 .execution-output pre{flex:1;min-width:0;margin:0;padding:0 14px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;font:16px/1.7 ui-monospace,Consolas,monospace;min-height:1.7em}
+
+.output-content{flex:1;min-width:0;padding-right:14px}.execution-output .output-content pre{padding:0}.output-content pre:empty{display:none}.graph-figure{margin:8px 0 0;max-width:680px;background:white;border:1px solid #d9e9e6;border-radius:9px;overflow:hidden}.graph-figure svg{display:block;width:100%;height:auto;font-family:system-ui,sans-serif}.graph-figure figcaption{padding:6px 12px;color:#476a70;font-size:13px}.graph-figure + .graph-figure{margin-top:14px}
 </style>
 <link rel="icon" href="../favicon.svg">
 <link rel="stylesheet" href="../assets/catalog-navigation.css">
@@ -121,6 +123,8 @@
       <option value="branch">条件分岐：if / else</option>
       <option value="while">繰り返し：while</option>
       <option value="nested">応用：条件分岐と繰り返し</option>
+      <option value="graphLine">グラフ：折れ線グラフ</option>
+      <option value="graphBar">グラフ：棒グラフ</option>
     </select>
   </div>
   <div id="saveChoices" class="save-choices hidden" aria-label="保存形式を選択">
@@ -136,7 +140,7 @@
 
 </div>
 <details class="panel editor"><summary><span class="editor-heading">① Pythonプログラムを表示・編集する</span><span class="editor-hint">Tabキーでスペース4個を入力できます。</span></summary><textarea id="source" spellcheck="false" aria-label="Pythonコード入力欄"></textarea><div class="buttons build-controls"><button class="primary" id="build">コードをセット</button><div id="msg" class="status" role="status">例題を選んで実行してみましょう。</div></div></details>
-<section class="panel execution"><h2>② 1行ずつ実行</h2><div class="code-output"><div class="codeView" id="codeView" aria-label="行番号付きコード"></div><div id="executionOutput" class="execution-output hidden" role="status" aria-label="実行結果" aria-live="polite" aria-atomic="true"><span class="output-marker" aria-hidden="true">•••</span><pre id="outputText"></pre></div></div><div class="stepbar"><button id="prev">◀ 1つ戻る</button><button class="primary" id="next">次の1ステップ ▶</button><button id="all">最後まで</button><button id="reset">最初から</button></div><div id="position" class="muted"></div><div class="trace-side-by-side"><div class="current-vars"><strong>現在の変数</strong><div class="variable-table"><table><thead id="varsHead"></thead><tbody id="vars"></tbody></table></div><p id="emptyVars" class="muted">まだ変数はありません。</p></div>
+<section class="panel execution"><h2>② 1行ずつ実行</h2><div class="code-output"><div class="codeView" id="codeView" aria-label="行番号付きコード"></div><div id="executionOutput" class="execution-output hidden" role="status" aria-label="実行結果" aria-live="polite" aria-atomic="true"><span class="output-marker" aria-hidden="true">•••</span><div class="output-content"><pre id="outputText"></pre><div id="graphOutput"></div></div></div></div><div class="stepbar"><button id="prev">◀ 1つ戻る</button><button class="primary" id="next">次の1ステップ ▶</button><button id="all">最後まで</button><button id="reset">最初から</button></div><div id="position" class="muted"></div><p id="graphHelp" class="muted hidden">グラフは plt.show() の行で表示されます。折れ線・棒グラフとタイトル・軸ラベルに対応しています。</p><div class="trace-side-by-side"><div class="current-vars"><strong>現在の変数</strong><div class="variable-table"><table><thead id="varsHead"></thead><tbody id="vars"></tbody></table></div><p id="emptyVars" class="muted">まだ変数はありません。</p></div>
 <section class="tracepanel"><div class="sectionhead trace-heading"><h2>③ トレース表</h2><span class="trace-legend"><strong class="legend-green">緑色</strong>：変化した値、<strong class="legend-blue">青色</strong>：現在のステップ</span></div><div class="history" id="historyScroll"><table><thead id="traceHead"></thead><tbody id="history"></tbody></table></div></section></div>
 </section>
 
@@ -146,11 +150,13 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
 const samples={basic:'x = 3\ny = 2\nx = x + y\ny = x * 2\nprint(y)',loop:'total = 0\nfor i in range(1, 5):\n    total = total + i\nprint(total)',branch:'score = 75\nif score >= 80:\n    result = "合格"\nelse:\n    result = "もう少し"\nprint(result)',while:'n = 1\nwhile n < 10:\n    n = n * 2\nprint(n)',nested:'total = 0\nfor i in range(1, 6):\n    if i % 2 == 0:\n        total = total + i\nprint(total)'};
+Object.assign(samples,{"graphLine":"import matplotlib.pyplot as plt\n\nx = [1, 2, 3, 4, 5]\ny = [2, 4, 3, 7, 6]\nplt.plot(x, y)\nplt.title(\"変化を折れ線で見る\")\nplt.xlabel(\"回数\")\nplt.ylabel(\"値\")\nplt.show()","graphBar":"import matplotlib.pyplot as plt\n\nlabels = [\"A\", \"B\", \"C\", \"D\"]\nvalues = [3, 7, 5, 4]\nplt.bar(labels, values)\nplt.title(\"値を棒グラフで比べる\")\nplt.xlabel(\"項目\")\nplt.ylabel(\"値\")\nplt.show()"});
 let steps=[],index=0,lines=[],lastSource='';
-function format(v){if(typeof v==='string')return JSON.stringify(v);if(typeof v==='boolean')return v?'True':'False';if(v===null)return 'None';return String(v)}
+function format(v){if(Array.isArray(v))return '['+v.map(format).join(', ')+']';if(typeof v==='string')return JSON.stringify(v);if(typeof v==='boolean')return v?'True':'False';if(v===null)return 'None';return String(v)}
 function reprVars(v){return Object.keys(v).sort().map(k=>k+'='+format(v[k])).join(', ')||'—'}
 function same(a,b){return JSON.stringify(a)===JSON.stringify(b)}
-function tokenize(s){let out=[],re=/\s+|(?:\d+(?:\.\d*)?|\.\d+)|(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(?:==|!=|<=|>=|\/\/|\*\*)|[A-Za-z_]\w*|./gy,m;while((m=re.exec(s))){let t=m[0];if(/^\s+$/.test(t))continue;if(!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(t)&&!/^['"]/.test(t)&&!/^(?:==|!=|<=|>=|\/\/|\*\*|[A-Za-z_]\w*|[+*\/%()\-,<>])$/.test(t))throw Error('未対応の記号: '+t);out.push(t)}return out}
+function tokenize(s){let out=[],re=/\s+|(?:\d+(?:\.\d*)?|\.\d+)|(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(?:==|!=|<=|>=|\/\/|\*\*)|[A-Za-z_]\w*|./gy,m;while((m=re.exec(s))){let t=m[0];if(/^\s+$/.test(t))continue;if(!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(t)&&!/^['"]/.test(t)&&!/^(?:==|!=|<=|>=|\/\/|\*\*|[A-Za-z_]\w*|[+*\/%()\[\]\-,<>])$/.test(t))throw Error('未対応の記号: '+t);out.push(t)}return out}
+function truth(v){return Array.isArray(v)?v.length>0:Boolean(v)}
 function expr(s,env){
  const ts=tokenize(s);let p=0;
  const prec={'or':1,'and':2,'==':3,'!=':3,'<':3,'>':3,'<=':3,'>=':3,'+':4,'-':4,'*':5,'/':5,'//':5,'%':5,'**':7};
@@ -160,9 +166,10 @@ function expr(s,env){
   const t=take();let lhs;
   if(t===undefined)throw Error('式が途中で終わっています');
   if(t==='('){lhs=parse(0,execute);if(take()!==')')throw Error(') が必要です');}
+  else if(t==='['){const values=[];if(peek()!==']'){while(true){if(values.length>=100)throw Error('リストは100個までです');const value=parse(0,execute);if(execute){if(Array.isArray(value))throw Error('入れ子のリストには対応していません');values.push(value);}if(peek()!==',')break;take();if(peek()===']')break;}}if(take()!==']')throw Error('] が必要です');if(execute)lhs=values;}
   else if(t==='-'||t==='+'||t==='not'){
    // Python: power binds more tightly than a unary sign on its left.
-   const v=parse(t==='not'?3:6,execute);if(execute)lhs=t==='not'?!v:t==='-'?-v:+v;
+   const v=parse(t==='not'?3:6,execute);if(execute&&Array.isArray(v)&&t!=='not')throw Error('リストに符号は付けられません');if(execute)lhs=t==='not'?!truth(v):t==='-'?-v:+v;
   }
   else if(/^\d/.test(t)||/^\.\d/.test(t)){if(execute)lhs=Number(t);}
   else if(/^['"]/.test(t)){
@@ -176,15 +183,16 @@ function expr(s,env){
   }
   else throw Error('式に使えない記号: '+t);
   while(prec[peek()]!==undefined&&prec[peek()]>=min){
-   const op=take(),skip=execute&&((op==='and'&&!lhs)||(op==='or'&&!!lhs));
+   const op=take(),skip=execute&&((op==='and'&&!truth(lhs))||(op==='or'&&truth(lhs)));
    const v=parse(prec[op]+(op==='**'?0:1),execute&&!skip);
    if(!execute||skip)continue;
+   if((Array.isArray(lhs)||Array.isArray(v))&&!['and','or','==','!=','+'].includes(op))throw Error("この演算にはリストを使えません");
    switch(op){
     // Python and/or return the selected operand, rather than a Boolean cast.
     case 'or':case 'and':lhs=v;break;
-    case '==':lhs=lhs===v;break;case '!=':lhs=lhs!==v;break;
+    case '==':lhs=Array.isArray(lhs)&&Array.isArray(v)?same(lhs,v):lhs===v;break;case '!=':lhs=Array.isArray(lhs)&&Array.isArray(v)?!same(lhs,v):lhs!==v;break;
     case '<':lhs=lhs<v;break;case '>':lhs=lhs>v;break;case '<=':lhs=lhs<=v;break;case '>=':lhs=lhs>=v;break;
-    case '+':lhs=lhs+v;break;case '-':lhs=lhs-v;break;case '*':lhs=lhs*v;break;
+    case '+':if(Array.isArray(lhs)||Array.isArray(v)){if(!Array.isArray(lhs)||!Array.isArray(v))throw Error('リスト同士を足してください');if(lhs.length+v.length>100)throw Error('リストは100個までです');lhs=lhs.concat(v);}else lhs=lhs+v;break;case '-':lhs=lhs-v;break;case '*':lhs=lhs*v;break;
     case '/':if(v===0)throw Error('0で割ることはできません');lhs=lhs/v;break;
     case '//':if(v===0)throw Error('0で割ることはできません');lhs=Math.floor(lhs/v);break;
     case '%':if(v===0)throw Error('0で割ることはできません');lhs=((lhs%v)+v)%v;break;
@@ -196,7 +204,7 @@ function expr(s,env){
  }
  const result=parse();if(p!==ts.length)throw Error('式を読み取れません: '+ts.slice(p).join(' '));return result;
 }
-function splitArgs(s){let dep=0,q='',start=0,out=[];for(let i=0;i<s.length;i++){let c=s[i];if(q){if(c==='\\')i++;else if(c===q)q='';continue}if(c==='"'||c==="'")q=c;else if(c==='(')dep++;else if(c===')')dep--;else if(c===','&&dep===0){out.push(s.slice(start,i).trim());start=i+1}}out.push(s.slice(start).trim());return out.filter(x=>x!=='')}
+function splitArgs(s){let dep=0,q='',start=0,out=[];for(let i=0;i<s.length;i++){let c=s[i];if(q){if(c==='\\')i++;else if(c===q)q='';continue}if(c==='"'||c==="'")q=c;else if(c==='('||c==='[')dep++;else if(c===')'||c===']')dep--;else if(c===','&&dep===0){out.push(s.slice(start,i).trim());start=i+1}}out.push(s.slice(start).trim());return out.filter(x=>x!=='')}
 function parseCode(source){
  const raw=source.replace(/\r/g,'').split('\n');
  const ls=raw.map((s,i)=>{const indent=(s.match(/^ */)||[''])[0].length;if(s.includes('\t'))throw Error((i+1)+'行目: インデントにはスペースを使ってください');if(indent%4)throw Error((i+1)+'行目: インデントはスペース4個単位です');return{text:s.trim(),indent,line:i+1}});
@@ -227,6 +235,10 @@ function parseCode(source){
     node.kind='for';node.variable=forMatch[1];node.args=splitArgs(forMatch[2]);
     if(node.args.length<1||node.args.length>3)throw Error(x.line+'行目: rangeの引数は1～3個です');
     let c=block(pos+1,depth+4);if(!c.nodes.length)throw Error(x.line+'行目: ブロックが空です');node.body=c.nodes;pos=c.pos;
+    }else if(t==='import matplotlib.pyplot as plt'){
+    node.kind='plotImport';pos++;
+   }else if(/^plt\.(plot|bar|title|xlabel|ylabel|show)\s*\(.*\)$/.test(t)){
+    const command=t.match(/^plt\.(\w+)\s*\((.*)\)$/);node.kind='plot';node.method=command[1];node.args=splitArgs(command[2]);pos++;
    }else if(/^print\s*\(.*\)$/.test(t)){
     node.kind='print';node.args=splitArgs(t.replace(/^print\s*\(/,'').slice(0,-1));pos++;
    }else{
@@ -242,13 +254,88 @@ function parseCode(source){
  if(leftover)throw Error(leftover.line+'行目: elif / else またはインデントの位置を確認してください');
  return{nodes:result.nodes,raw};
 }
-function buildSteps(source){let ast=parseCode(source),env={},output=[],trace=[{line:0,text:'開始前',vars:{},output:[],changed:[]}],n=0;function record(line,text,old){n++;if(n>500)throw Error('500ステップを超えました。無限ループなどを確認してください');let changed=Object.keys(env).filter(k=>!same(env[k],old[k]));trace.push({line,text,vars:{...env},output:[...output],changed})}function run(nodes){for(let node of nodes){let old={...env};try{if(node.kind==='assign'){env[node.variable]=expr(node.value,env);record(node.line,node.text,old)}else if(node.kind==='print'){output.push(node.args.map(a=>formatPrint(expr(a,env))).join(' '));record(node.line,node.text,old)}else if(node.kind==='if'){let hit=false;for(let b of node.branches){let ok=b.cond===null||Boolean(expr(b.cond,env));record(b.line,b.text,old);if(ok){run(b.body);hit=true;break}}}else if(node.kind==='while'){let c=0;while(true){let ok=Boolean(expr(node.cond,env));record(node.line,node.text,{...env});if(!ok)break;if(++c>500)throw Error('whileの繰り返し回数が多すぎます');run(node.body)}}else if(node.kind==='for'){let args=node.args.map(a=>expr(a,env));if(!args.every(a=>Number.isInteger(a)))throw Error('rangeには整数を指定してください');let [start,end,step]=args.length===1?[0,args[0],1]:args.length===2?[args[0],args[1],1]:args;if(step===0)throw Error('rangeの増分は0にできません');let count=0;for(let i=start;step>0?i<end:i>end;i+=step){let beforeLoop={...env};env[node.variable]=i;record(node.line,node.text,beforeLoop);if(++count>500)throw Error('forの繰り返し回数が多すぎます');run(node.body)}record(node.line,node.text+'（終了）',{...env})}}catch(e){if(!/^\d+行目:/.test(e.message))throw Error(node.line+'行目: '+e.message);throw e}}}function formatPrint(v){return typeof v==='string'?v:format(v)}run(ast.nodes);return{trace,raw:ast.raw}}
+function buildSteps(source){let ast=parseCode(source),env={},output=[],graphs=[],plotting={imported:false,figure:{series:[],title:'',xlabel:'',ylabel:''}},trace=[{line:0,text:'開始前',vars:{},output:[],graphs:[],changed:[]}],n=0;function record(line,text,old){n++;if(n>500)throw Error('500ステップを超えました。無限ループなどを確認してください');let changed=Object.keys(env).filter(k=>!same(env[k],old[k]));trace.push({line,text,vars:{...env},output:[...output],graphs:[...graphs],changed})}function run(nodes){for(let node of nodes){let old={...env};try{if(node.kind==='assign'){env[node.variable]=expr(node.value,env);record(node.line,node.text,old)}else if(node.kind==='print'){output.push(node.args.map(a=>formatPrint(expr(a,env))).join(' '));record(node.line,node.text,old)}else if(node.kind==='plotImport'||node.kind==='plot'){plotCommand(node,env,plotting,graphs);record(node.line,node.text,old)}else if(node.kind==='if'){let hit=false;for(let b of node.branches){let ok=b.cond===null||truth(expr(b.cond,env));record(b.line,b.text,old);if(ok){run(b.body);hit=true;break}}}else if(node.kind==='while'){let c=0;while(true){let ok=truth(expr(node.cond,env));record(node.line,node.text,{...env});if(!ok)break;if(++c>500)throw Error('whileの繰り返し回数が多すぎます');run(node.body)}}else if(node.kind==='for'){let args=node.args.map(a=>expr(a,env));if(!args.every(a=>Number.isInteger(a)))throw Error('rangeには整数を指定してください');let [start,end,step]=args.length===1?[0,args[0],1]:args.length===2?[args[0],args[1],1]:args;if(step===0)throw Error('rangeの増分は0にできません');let count=0;for(let i=start;step>0?i<end:i>end;i+=step){let beforeLoop={...env};env[node.variable]=i;record(node.line,node.text,beforeLoop);if(++count>500)throw Error('forの繰り返し回数が多すぎます');run(node.body)}record(node.line,node.text+'（終了）',{...env})}}catch(e){if(!/^\d+行目:/.test(e.message))throw Error(node.line+'行目: '+e.message);throw e}}}function formatPrint(v){return typeof v==='string'?v:format(v)}run(ast.nodes);return{trace,raw:ast.raw}}
+function plotCommand(node, env, plotting, graphs) {
+ if(node.kind==='plotImport'){plotting.imported=true;return;}
+ if(!plotting.imported)throw Error('先に import matplotlib.pyplot as plt を書いてください');
+ const args=node.args.map(a=>expr(a,env));
+ if(['title','xlabel','ylabel'].includes(node.method)){
+  if(args.length!==1||typeof args[0]!=='string')throw Error('plt.'+node.method+' には文字列を1つ指定してください');
+  if(args[0].length>120)throw Error('グラフのラベルは120文字までです');
+  plotting.figure[node.method]=args[0];return;
+ }
+ if(node.method==='show'){
+  if(args.length)throw Error('plt.show() に引数は指定しません');
+  if(!plotting.figure.series.length)throw Error('先に plt.plot(x, y) または plt.bar(x, y) を書いてください');
+  if(graphs.length>=12)throw Error('グラフは12枚まで表示できます');
+  graphs.push(JSON.parse(JSON.stringify(plotting.figure)));plotting.figure={series:[],title:'',xlabel:'',ylabel:''};return;
+ }
+ if(args.length!==2||!args.every(Array.isArray))throw Error('plt.'+node.method+' には x と y のリストを指定してください');
+ const [x,y]=args;
+ if(!x.length||x.length!==y.length)throw Error('x と y は同じ個数の、空でないリストにしてください');
+ if(x.length>100)throw Error('グラフのデータは100個までです');
+ if(!y.every(v=>typeof v==='number'&&Number.isFinite(v)&&Math.abs(v)<=1e100))throw Error('y には有限の数値を指定してください（絶対値は1e100まで）');
+ const numeric=x.every(v=>typeof v==='number'&&Number.isFinite(v)&&Math.abs(v)<=1e100);
+ const labels=x.every(v=>typeof v==='string'&&v.length<=40);
+ if(!numeric&&!(node.method==='bar'&&labels))throw Error('折れ線の x は数値、棒グラフの x は数値か文字列のリストにしてください');
+ if(plotting.figure.series.length>=5)throw Error('1枚に描く系列は5つまでです');
+ const kind=node.method==='plot'?'line':'bar';
+ if(plotting.figure.series.some(s=>s.kind!==kind||!same(s.x,x)))throw Error('同じグラフの系列は種類と x をそろえてください');
+ plotting.figure.series.push({kind,x:[...x],y:[...y]});
+}
+
+function graphFigure(graph) {
+ const ns='http://www.w3.org/2000/svg',figure=document.createElement('figure');figure.className='graph-figure';
+ const svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 640 380');svg.setAttribute('role','img');svg.setAttribute('aria-label',graph.title||(graph.series[0].kind==='line'?'折れ線グラフ':'棒グラフ'));
+ const node=(tag,attrs={},text)=>{const el=document.createElementNS(ns,tag);for(const [k,v]of Object.entries(attrs))el.setAttribute(k,String(v));if(text!==undefined)el.textContent=text;svg.append(el);return el;};
+ node('title',{},graph.title||(graph.series[0].kind==='line'?'折れ線グラフ':'棒グラフ'));
+ node('desc',{},graph.series.map((s,i)=>'系列'+(i+1)+': '+s.x.map((x,j)=>x+' = '+s.y[j]).join(', ')).join('; '));
+ node('rect',{x:0,y:0,width:640,height:380,fill:'#fff'});
+ const first=graph.series[0],bar=first.kind==='bar',left=76,right=612,top=48,bottom=292;
+ const ys=graph.series.flatMap(s=>s.y);let lo=Math.min(...ys),hi=Math.max(...ys);
+ if(bar){lo=Math.min(0,lo);hi=Math.max(0,hi);}
+ if(lo===hi){const pad=lo===0?1:Math.max(Math.abs(lo)*.1,1e-100);lo-=pad;hi+=pad;}else{const pad=(hi-lo)*.08;lo-=pad;hi+=pad;}
+ const rough=(hi-lo)/4,power=10**Math.floor(Math.log10(rough)),ratio=rough/power;
+ const tickStep=power*(ratio<=1?1:ratio<=2?2:ratio<=5?5:10);
+ if(tickStep>0&&Number.isFinite(tickStep)){lo=Math.floor(lo/tickStep)*tickStep;hi=Math.ceil(hi/tickStep)*tickStep;}
+ if(bar&&Math.min(...ys)>=0)lo=0;if(bar&&Math.max(...ys)<=0)hi=0;
+ if(lo===hi){lo=-1;hi=1;}
+ const yPos=y=>bottom-(y-lo)/(hi-lo)*(bottom-top),fmt=n=>Number(n.toPrecision(4)).toString();
+ let xmin=0,xmax=1;if(!bar){xmin=Math.min(...first.x);xmax=Math.max(...first.x);if(xmin===xmax){const pad=Math.abs(xmin)*.1||1;xmin-=pad;xmax+=pad;}}
+ const xPos=(x,i)=>bar?left+(i+.5)*(right-left)/first.x.length:left+(x-xmin)/(xmax-xmin)*(right-left);
+ const count=tickStep>0&&Number.isFinite(tickStep)?Math.round((hi-lo)/tickStep):4,tickCount=count>=1&&count<=10?count:4;
+ for(let i=0;i<=tickCount;i++){const y=lo+(hi-lo)*i/tickCount,py=yPos(y);node('line',{x1:left,y1:py,x2:right,y2:py,stroke:'#e2e9ed'});node('text',{x:left-10,y:py+4,'text-anchor':'end','font-size':12,fill:'#4a6573'},fmt(y));}
+ const base=bar?yPos(0):bottom;
+ node('line',{x1:left,y1:top,x2:left,y2:bottom,stroke:'#829aa7'});node('line',{x1:left,y1:base,x2:right,y2:base,stroke:'#829aa7'});
+ const ticks=first.x.length<=8?first.x.map((x,i)=>({x,i})):Array.from({length:6},(_,n)=>{const i=Math.round(n*(first.x.length-1)/5);return{x:first.x[i],i};});
+ for(const tick of ticks){const text=typeof tick.x==='number'?fmt(tick.x):tick.x;const el=node('text',{x:xPos(tick.x,tick.i),y:bottom+22,'text-anchor':'middle','font-size':12,fill:'#4a6573'},text.length>10?text.slice(0,9)+'…':text);const title=document.createElementNS(ns,'title');title.textContent=text;el.append(title);}
+ const colors=['#087b79','#2563b6','#ba5a0b','#8d48b3','#ae3f56'];
+ graph.series.forEach((s,seriesIndex)=>{const color=colors[seriesIndex];if(!bar)node('polyline',{points:s.x.map((x,i)=>xPos(x,i)+','+yPos(s.y[i])).join(' '),fill:'none',stroke:color,'stroke-width':3});
+  s.x.forEach((x,i)=>{let mark;if(bar){const slot=(right-left)/s.x.length,width=slot*.72/graph.series.length,px=xPos(x,i)-slot*.36+seriesIndex*width;mark=node('rect',{x:px,y:Math.min(base,yPos(s.y[i])),width:Math.max(.5,width-1),height:Math.abs(base-yPos(s.y[i])),fill:color});}else mark=node('circle',{cx:xPos(x,i),cy:yPos(s.y[i]),r:4,fill:color});const title=document.createElementNS(ns,'title');title.textContent=String(x)+': '+String(s.y[i]);mark.append(title);});
+ });
+ node('text',{x:320,y:27,'text-anchor':'middle','font-size':18,'font-weight':700,fill:'#173544'},graph.title);
+ node('text',{x:(left+right)/2,y:355,'text-anchor':'middle','font-size':14,fill:'#173544'},graph.xlabel);
+ node('text',{x:20,y:(top+bottom)/2,transform:'rotate(-90 20 '+((top+bottom)/2)+')','text-anchor':'middle','font-size':14,fill:'#173544'},graph.ylabel);
+ figure.append(svg);const caption=document.createElement('figcaption');caption.textContent=graph.title||(bar?'棒グラフ':'折れ線グラフ');figure.append(caption);return figure;
+}
+
+function renderGraphs(graphs) {
+ $('graphOutput').replaceChildren(...graphs.map(graphFigure));
+}
+
+function revealCodeLine() {
+ const view=$('codeView'),line=view.querySelector('.line.active')||view.querySelector('.line.done');
+ if(!line)return;const area=view.getBoundingClientRect(),row=line.getBoundingClientRect();
+ if(row.bottom>area.bottom)view.scrollTop+=row.bottom-area.bottom+7;
+ else if(row.top<area.top)view.scrollTop-=area.top-row.top+7;
+}
+
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function message(m,type=''){ $('msg').className='status '+type;$('msg').textContent=m}
 function fileFeedback(m,type='error'){$('fileFeedback').className='file-feedback '+type;$('fileFeedback').textContent=m}
 function clearFileFeedback(){$('fileFeedback').className='file-feedback hidden';$('fileFeedback').textContent=''}
 function compile(){try{let result=buildSteps($('source').value);steps=result.trace;lines=result.raw;index=0;lastSource=$('source').value;message('解析完了。'+(steps.length-1)+'ステップで実行できます。','success');render()}catch(e){steps=[];lines=$('source').value.split('\n');index=0;message(e.message,'error');render()}}
-function render(){let s=steps[index]||{vars:{},changed:[],output:[],line:0,text:'開始前'};let next=steps[index+1];$('codeView').innerHTML=lines.map((line,i)=>`<div class="line ${s.line===i+1?'done':''} ${next&&next.line===i+1?'active':''}"><span class="num">${i+1}</span><span class="src">${escapeHTML(line)||' '}</span></div>`).join('');$('outputText').textContent=s.output.join('\n');$('executionOutput').classList.toggle('hidden',s.output.length===0);let names=Object.keys(s.vars).sort();$('varsHead').innerHTML='<tr>'+names.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'</tr>';$('vars').innerHTML='<tr>'+names.map(k=>'<td class="'+(s.changed.includes(k)?'changedCell':'')+'">'+escapeHTML(format(s.vars[k]))+'</td>').join('')+'</tr>';$('emptyVars').classList.toggle('hidden',names.length>0);let traceNames=Array.from(new Set(steps.flatMap(st=>Object.keys(st.vars)))).sort();$('traceHead').innerHTML='<tr><th>ステップ</th>'+traceNames.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'<th>実行内容</th></tr>';$('history').innerHTML=steps.slice(1,index+1).map((t,i)=>'<tr class="'+(i+1===index?'current':'')+'"><td>'+(i+1)+'</td>'+traceNames.map(k=>'<td class="'+(t.changed.includes(k)?'changedCell':'')+'">'+(Object.prototype.hasOwnProperty.call(t.vars,k)?escapeHTML(format(t.vars[k])):'—')+'</td>').join('')+'<td>'+escapeHTML(t.text)+'</td></tr>').join('');$('prev').disabled=index===0;$('next').disabled=!next;$('all').disabled=!next;$('position').textContent='ステップ '+index+' / '+Math.max(0,steps.length-1)+(next?' · 次に実行する行：'+next.line+'行目':' · 実行終了');}
+function render(){let s=steps[index]||{vars:{},changed:[],output:[],line:0,text:'開始前'};let next=steps[index+1];$('codeView').innerHTML=lines.map((line,i)=>`<div class="line ${s.line===i+1?'done':''} ${next&&next.line===i+1?'active':''}"><span class="num">${i+1}</span><span class="src">${escapeHTML(line)||' '}</span></div>`).join('');revealCodeLine();$('outputText').textContent=s.output.join('\n');renderGraphs(s.graphs||[]);$('executionOutput').classList.toggle('hidden',s.output.length===0&&!(s.graphs||[]).length);$('graphHelp').classList.toggle('hidden',!lines.some(line=>line.trim()==='import matplotlib.pyplot as plt'));let names=Object.keys(s.vars).sort();$('varsHead').innerHTML='<tr>'+names.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'</tr>';$('vars').innerHTML='<tr>'+names.map(k=>'<td class="'+(s.changed.includes(k)?'changedCell':'')+'">'+escapeHTML(format(s.vars[k]))+'</td>').join('')+'</tr>';$('emptyVars').classList.toggle('hidden',names.length>0);let traceNames=Array.from(new Set(steps.flatMap(st=>Object.keys(st.vars)))).sort();$('traceHead').innerHTML='<tr><th>ステップ</th>'+traceNames.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'<th>実行内容</th></tr>';$('history').innerHTML=steps.slice(1,index+1).map((t,i)=>'<tr class="'+(i+1===index?'current':'')+'"><td>'+(i+1)+'</td>'+traceNames.map(k=>'<td class="'+(t.changed.includes(k)?'changedCell':'')+'">'+(Object.prototype.hasOwnProperty.call(t.vars,k)?escapeHTML(format(t.vars[k])):'—')+'</td>').join('')+'<td>'+escapeHTML(t.text)+'</td></tr>').join('');$('prev').disabled=index===0;$('next').disabled=!next;$('all').disabled=!next;$('position').textContent='ステップ '+index+' / '+Math.max(0,steps.length-1)+(next?' · 次に実行する行：'+next.line+'行目':' · 実行終了');}
 function step(){if(index<steps.length-1){index++;render()}}
 $('build').addEventListener('click',compile);$('reset').addEventListener('click',compile);$('prev').addEventListener('click',()=>{if(index>0){index--;render()}});$('next').addEventListener('click',step);$('all').addEventListener('click',()=>{index=steps.length-1;render()});$('sample').addEventListener('change',()=>{if(!$('sample').value)return;$('source').value=samples[$('sample').value];currentFileName=$('sample').selectedOptions[0].textContent;updateOpenedName();$('sample').value='';compile()});$('newCode').addEventListener('click',()=>{hideSaveChoices();clearFileFeedback();if($('source').value.trim()&&!confirm('新規作成しますか？ 現在のコードとトレース履歴は消去されます。'))return;currentFileName='';$('source').value='';updateOpenedName();$('openedName').focus();$('sample').selectedIndex=-1;steps=[];index=0;lines=[];lastSource='';$('source').closest('details').open=true;render();message('プログラム名を入力してから、Pythonコードを作成してください。');});function exportRows(){
  let names=Array.from(new Set(steps.flatMap(s=>Object.keys(s.vars)))).sort();
@@ -321,6 +408,17 @@ function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;
     }
    }
    rows.forEach((cells,i)=>row(cells,i===0));
+  }
+  const current=steps[index];
+  if(current&&current.graphs&&current.graphs.length){
+   newPage();line('[実行結果のグラフ]');
+   for(const graph of current.graphs){
+    const svg=graphFigure(graph).querySelector('svg');svg.setAttribute('xmlns','http://www.w3.org/2000/svg');
+    const markup=new XMLSerializer().serializeToString(svg),url=URL.createObjectURL(new Blob([markup],{type:'image/svg+xml;charset=utf-8'}));
+    try{const image=await new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(Error('グラフ画像を作成できませんでした'));image.src=url;});
+     const chartWidth=width-margin*2,chartHeight=chartWidth*380/640;if(page.y+chartHeight>height-margin)newPage();page.ctx.drawImage(image,margin,page.y,chartWidth,chartHeight);page.y+=chartHeight+lineHeight;
+    }finally{URL.revokeObjectURL(url);}
+   }
   }
   return makePdfFromCanvases(canvases);
  }

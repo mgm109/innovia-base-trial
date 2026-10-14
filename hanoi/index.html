@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ハノイの塔</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'M PLUS Rounded 1c', 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Prevent page scrolling during touch/drag interaction */
+        .no-touch-action {
+            touch-action: none;
+        }
+
+        /* Custom enlarged range slider */
+        input[type=range].large-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range].large-slider:focus {
+            outline: none;
+        }
+        input[type=range].large-slider::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 14px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 8px;
+            border: 1px solid #475569;
+        }
+        input[type=range].large-slider::-webkit-slider-thumb {
+            height: 28px;
+            width: 28px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -7px;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+            transition: background-color 0.15s, transform 0.15s;
+        }
+        input[type=range].large-slider::-webkit-slider-thumb:hover {
+            background: #7dd3fc;
+            transform: scale(1.15);
+        }
+
+        /* Peg Target Highlight */
+        .peg-target-active {
+            background-color: rgba(56, 189, 248, 0.15) !important;
+            border-color: #38bdf8 !important;
+        }
+
+        /* Static Disk Element */
+        .disk-element {
+            position: absolute;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4), inset 0 2px 3px rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #ffffff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            cursor: grab;
+            z-index: 10;
+            box-sizing: border-box;
+            transition: none !important; /* Prevents static disks from bouncing on state re-renders */
+        }
+
+        .disk-element:active {
+            cursor: grabbing;
+        }
+
+        /* Floating overlay animated disk */
+        .flying-disk {
+            position: absolute;
+            z-index: 40 !important;
+            pointer-events: none !important;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6) !important;
+        }
+
+        /* Drag block overlay container */
+        #dragContainer {
+            position: absolute;
+            z-index: 50;
+            pointer-events: none;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Hitbox expansion for smallest disk */
+        .disk-hitbox-1::before {
+            content: '';
+            position: absolute;
+            top: -12px;
+            bottom: -12px;
+            left: -16px;
+            right: -16px;
+            background: transparent;
+        }
+
+        /* Glassmorphism modal background */
+        .glass-modal {
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-start p-2 sm:p-4 overflow-x-hidden">
+
+    <div class="w-full max-w-5xl flex flex-col items-center">
+        
+        <!-- Header Title Bar -->
+        <header class="w-full text-center my-2 flex flex-col items-center gap-2">
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-wide text-sky-400 flex items-center justify-center gap-3">
+                <i class="fa-solid fa-cubes-stacked text-amber-400"></i>
+                ハノイの塔
+            </h1>
+
+            <!-- Primary Mode Switcher Tabs -->
+            <div class="flex items-center gap-2 bg-slate-800 p-1.5 rounded-2xl border border-slate-700 shadow-lg mt-1">
+                <button id="tabNormalMode" class="px-5 py-2.5 rounded-xl text-base sm:text-lg font-extrabold transition bg-sky-500 text-white shadow-md flex items-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-gamepad"></i> 通常モード
+                </button>
+                <button id="tabFreeMode" class="px-5 py-2.5 rounded-xl text-base sm:text-lg font-extrabold text-slate-300 hover:text-white transition flex items-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> フリーモード (解説用)
+                </button>
+            </div>
+        </header>
+
+        <!-- Top Controls Display Panel -->
+        <div class="w-full bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col gap-4">
+            
+            <!-- Row 1: Disk Count Selector, Stat Displays, Action Buttons -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                
+                <!-- Disk Count Selector Card -->
+                <div class="md:col-span-3 bg-slate-900/80 border border-slate-700/60 rounded-xl p-3 flex flex-col justify-center items-center">
+                    <label for="diskSelect" class="text-slate-300 text-xs sm:text-sm font-bold mb-1.5 flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-sky-400"></i>
+                        円盤の枚数 (Disks):
+                    </label>
+                    <div class="flex items-center gap-2 w-full justify-center">
+                        <select id="diskSelect" class="bg-slate-800 border-2 border-sky-500 text-sky-200 text-lg sm:text-xl font-bold rounded-xl px-4 py-1.5 text-center cursor-pointer hover:bg-slate-700 transition">
+                            <option value="1">1 枚</option>
+                            <option value="2">2 枚</option>
+                            <option value="3" selected>3 枚</option>
+                            <option value="4">4 枚</option>
+                            <option value="5">5 枚</option>
+                            <option value="6">6 枚</option>
+                            <option value="7">7 枚</option>
+                            <option value="8">8 枚</option>
+                            <option value="9">9 枚</option>
+                            <option value="10">10 枚</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Stats Display: Current Moves & Unlocked/Locked Min Moves -->
+                <div class="md:col-span-5 bg-slate-900/80 border border-slate-700/60 rounded-xl p-3 sm:p-4 flex items-center justify-around">
+                    <div class="text-center">
+                        <span id="movesLabel" class="text-xs sm:text-sm font-bold text-slate-400 block mb-1">現在の手数</span>
+                        <span id="currentMovesDisplay" class="text-3xl sm:text-4xl font-extrabold text-amber-400 drop-shadow-md">0</span>
+                    </div>
+                    <div class="h-10 w-px bg-slate-700"></div>
+                    <div class="text-center flex flex-col items-center">
+                        <span class="text-xs sm:text-sm font-bold text-slate-400 block mb-1">最短手数 (Min Moves)</span>
+                        <div id="minMovesContainer" class="flex items-center justify-center min-h-[44px]">
+                            <!-- Dynamic Content -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons: Reset & Undo -->
+                <div class="md:col-span-4 flex flex-row gap-2 h-full">
+                    <button id="resetBtn" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold text-base sm:text-lg rounded-xl py-3 px-3 shadow-lg flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        リセット
+                    </button>
+                    <button id="undoBtn" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold text-base sm:text-lg rounded-xl py-3 px-3 shadow-lg flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer">
+                        <i class="fa-solid fa-reply"></i>
+                        1手戻す
+                    </button>
+                </div>
+            </div>
+
+            <!-- NORMAL MODE: Step Analysis Panel -->
+            <div id="stepAnalysisPanel" class="bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 sm:p-4 flex flex-col gap-3 transition-all duration-300">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 bg-slate-800 p-1 rounded-xl border border-slate-700">
+                        <button id="modeManualBtn" class="px-4 py-2 rounded-lg text-sm sm:text-base font-bold transition bg-sky-500 text-white shadow cursor-pointer">
+                            <i class="fa-solid fa-hand-pointer mr-1"></i> 手動モード
+                        </button>
+                        <button id="modeAutoBtn" class="px-4 py-2 rounded-lg text-sm sm:text-base font-bold transition flex items-center gap-2">
+                            <i id="modeAutoLockIcon" class="fa-solid fa-lock text-amber-400 text-sm"></i>
+                            <span id="modeAutoLabel">ステップ解析</span>
+                        </button>
+                    </div>
+
+                    <!-- Auto Play Controls -->
+                    <div id="autoControls" class="flex items-center gap-2 opacity-50 pointer-events-none">
+                        <button id="prevStepBtn" class="bg-slate-700 hover:bg-slate-600 text-white p-3 rounded-xl font-bold transition active:scale-95 cursor-pointer" title="1ステップ戻る">
+                            <i class="fa-solid fa-backward-step text-lg"></i>
+                        </button>
+                        <button id="playPauseBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-base font-bold transition flex items-center gap-2 shadow-lg active:scale-95 cursor-pointer">
+                            <i id="playIcon" class="fa-solid fa-play text-lg"></i>
+                            <span id="playText">自動再生</span>
+                        </button>
+                        <button id="nextStepBtn" class="bg-slate-700 hover:bg-slate-600 text-white p-3 rounded-xl font-bold transition active:scale-95 cursor-pointer" title="1ステップ進む">
+                            <i class="fa-solid fa-forward-step text-lg"></i>
+                        </button>
+                    </div>
+
+                    <div class="text-slate-300 text-sm sm:text-base font-semibold flex items-center gap-2">
+                        速度:
+                        <select id="speedSelect" disabled class="bg-slate-800 border border-slate-600 text-sky-300 rounded-lg px-2 py-1 text-sm font-bold opacity-50 cursor-not-allowed">
+                            <option value="1200">遅い</option>
+                            <option value="600" selected>標準</option>
+                            <option value="250">速い</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Step Range Slider -->
+                <div id="sliderWrapper" class="flex flex-col gap-1 mt-1 opacity-50 pointer-events-none">
+                    <div class="flex justify-between items-center text-xs sm:text-sm font-bold text-slate-300">
+                        <span id="stepLabelText">Step <span id="stepCurrentVal" class="text-sky-400 font-extrabold text-base">0</span> / <span id="stepMaxVal" class="text-emerald-400">?</span></span>
+                        <span id="stepUnlockConditionText" class="text-amber-400 font-semibold text-xs flex items-center gap-1">
+                            <i class="fa-solid fa-lock text-xs"></i> クリア条件を満たすとスライダーが操作可能になります
+                        </span>
+                    </div>
+                    <input type="range" id="stepSlider" min="0" max="7" value="0" disabled class="large-slider cursor-not-allowed">
+                </div>
+            </div>
+
+            <!-- FREE MODE: Panel (Explanation Mode) -->
+            <div id="freeModePanel" class="bg-amber-950/40 border border-amber-600/60 rounded-xl p-3 sm:p-4 flex flex-col gap-3 hidden">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 text-amber-300 font-extrabold text-sm sm:text-base">
+                        <i class="fa-solid fa-hand-holding-hand text-lg"></i>
+                        フリーモード（解説用）: 複数枚ブロックドラッグ＆ルール無視配置が可能
+                    </div>
+
+                    <!-- Free Mode Auto Goal Button -->
+                    <button id="freeAutoGoalBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold text-base sm:text-lg shadow-lg flex items-center gap-2 transition active:scale-95 cursor-pointer">
+                        <i id="freeAutoGoalIcon" class="fa-solid fa-play"></i>
+                        <span id="freeAutoGoalText">自動ゴール (Peg A)</span>
+                    </button>
+                </div>
+                <p class="text-xs sm:text-sm text-slate-300 font-medium">
+                    ※円盤を掴むとその上の円盤も一緒に移動できます。また、小の上に大を置く自由な配置が可能です。<br>
+                    ※「自動ゴール」を実行する際は、ルールを守った正しい配置（小の上に大がない状態）にする必要があります。
+                </p>
+            </div>
+
+        </div>
+
+        <!-- Stage Container -->
+        <div id="stage" class="w-full relative mt-2 bg-slate-900 border-2 border-slate-700/80 rounded-2xl no-touch-action shadow-2xl overflow-hidden" style="height: 460px;">
+            
+            <!-- Target Peg Columns Grid (Peg A: Far Left, Peg B: Middle, Peg C: Far Right) -->
+            <div class="absolute inset-0 grid grid-cols-3 h-full w-full pointer-events-none">
+                
+                <!-- Peg A (FAR LEFT - GOAL) -->
+                <div id="pegCol-A" class="relative flex flex-col items-center justify-end pb-8 border-r border-slate-800/60 transition-colors duration-200">
+                    <div class="absolute top-4 bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 px-4 py-1.5 rounded-full text-base font-extrabold shadow-lg flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-amber-400"></i> Peg A (ゴール / Goal)
+                    </div>
+                    <!-- Rod -->
+                    <div class="w-5 bg-gradient-to-t from-slate-600 via-slate-400 to-slate-500 rounded-t-lg shadow-inner" style="height: 330px;"></div>
+                </div>
+
+                <!-- Peg B (MIDDLE - AUX) -->
+                <div id="pegCol-B" class="relative flex flex-col items-center justify-end pb-8 border-r border-slate-800/60 transition-colors duration-200">
+                    <div class="absolute top-4 bg-slate-800/90 border border-slate-600/80 text-slate-300 px-4 py-1.5 rounded-full text-base font-extrabold shadow">
+                        Peg B
+                    </div>
+                    <!-- Rod -->
+                    <div class="w-5 bg-gradient-to-t from-slate-600 via-slate-400 to-slate-500 rounded-t-lg shadow-inner" style="height: 330px;"></div>
+                </div>
+
+                <!-- Peg C (FAR RIGHT - START) -->
+                <div id="pegCol-C" class="relative flex flex-col items-center justify-end pb-8 transition-colors duration-200">
+                    <div class="absolute top-4 bg-sky-950/80 border border-sky-500/50 text-sky-300 px-4 py-1.5 rounded-full text-base font-extrabold shadow-lg flex items-center gap-2">
+                        <i class="fa-solid fa-flag text-sky-400"></i> Peg C (スタート / Start)
+                    </div>
+                    <!-- Rod -->
+                    <div class="w-5 bg-gradient-to-t from-slate-600 via-slate-400 to-slate-500 rounded-t-lg shadow-inner" style="height: 330px;"></div>
+                </div>
+
+            </div>
+
+            <!-- Base Platform -->
+            <div class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-r from-amber-950 via-amber-900 to-amber-950 border-t-2 border-amber-700 shadow-2xl"></div>
+
+            <!-- Vertical Alignment Beam Guide -->
+            <div id="targetBeam" class="absolute top-0 bottom-8 w-1 bg-sky-400/50 border-l border-r border-sky-300 hidden pointer-events-none transition-all duration-75"></div>
+
+            <!-- Dynamic Disks Container -->
+            <div id="disksContainer" class="absolute inset-0 no-touch-action"></div>
+
+            <!-- Drag Block Overlay Container -->
+            <div id="dragContainer" class="hidden"></div>
+
+        </div>
+
+    </div>
+
+    <!-- Victory Modal -->
+    <div id="winModal" class="fixed inset-0 glass-modal flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-slate-800 border-2 border-emerald-500 rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center shadow-2xl transform transition-all scale-100 flex flex-col items-center">
+            <div class="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center text-4xl mb-4 border border-emerald-400 animate-bounce">
+                <i class="fa-solid fa-trophy text-amber-400"></i>
+            </div>
+            <h2 class="text-3xl font-black text-white mb-2">クリアおめでとう！</h2>
+            <p class="text-slate-300 text-base mb-4">
+                すべての円盤を <strong class="text-emerald-400">Peg A (左端)</strong> に移動させました！
+            </p>
+            
+            <div class="bg-slate-900/90 border border-slate-700 rounded-2xl p-4 w-full mb-4 grid grid-cols-2 gap-2">
+                <div>
+                    <span class="text-xs text-slate-400 block font-bold">今回のかかった手数</span>
+                    <span id="winMoves" class="text-2xl font-extrabold text-amber-400">0</span>
+                </div>
+                <div>
+                    <span class="text-xs text-slate-400 block font-bold">最短手数</span>
+                    <span id="winMinMoves" class="text-2xl font-extrabold text-emerald-400">🔒</span>
+                </div>
+            </div>
+
+            <div id="winUnlockNotice" class="w-full bg-sky-950/90 border border-sky-600/80 rounded-xl p-3 text-left text-xs sm:text-sm mb-6 flex flex-col gap-1">
+            </div>
+
+            <button id="winResetBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-lg rounded-xl py-3 shadow-lg transition active:scale-95 cursor-pointer">
+                次へ進む / もう一度挑戦
+            </button>
+        </div>
+    </div>
+
+    <!-- Rule Violation Warning Modal for Free Mode Auto-Goal -->
+    <div id="warningModal" class="fixed inset-0 glass-modal flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-slate-800 border-2 border-amber-500 rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl flex flex-col items-center">
+            <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center text-3xl mb-4 border border-amber-400">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="text-2xl font-extrabold text-white mb-3">自動ゴールできません</h3>
+            <p id="warningMessage" class="text-slate-300 text-sm sm:text-base mb-6 leading-relaxed bg-slate-900/80 border border-slate-700 rounded-xl p-4 text-left">
+                ルールを無視した配置（小の上に大）があるため、自動ゴールできません。
+            </p>
+            <button id="closeWarningBtn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-base sm:text-lg rounded-xl py-3 shadow-lg transition active:scale-95 cursor-pointer">
+                理解しました (配置を修正する)
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // State management variables
+        let primaryMode = 'normal'; // 'normal' | 'free'
+        let numDisks = 3;
+        
+        // FIXED PEG LAYOUT:
+        // Peg A: Leftmost (Goal)
+        // Peg B: Middle
+        // Peg C: Rightmost (Start)
+        let pegs = { 'A': [], 'B': [], 'C': [] };
+        
+        let historyStack = []; // For 1-step undo in normal mode
+        let currentMoves = 0;
+        let minMoves = 7;
+        let activeMode = 'manual'; // 'manual' | 'auto'
+        let currentStep = 0;
+        let isAutoPlaying = false;
+        let isAnimating = false; // Strict animation lock
+        let animatingDiskInfo = null; // { diskVal, fromPeg, fromStackIdx }
+        let solutionMoves = []; // Move list for standard step analysis
+
+        // Pointer Drag State
+        let isDragging = false;
+        let sourcePeg = null;
+        let draggedBlock = []; // Array of disk values being dragged as a block [bottomDisk, ..., topDisk]
+        let activePointerId = null;
+
+        // Persistent in-memory stats across session (retained during disk changes, resets, and mode switches)
+        let stats = {};
+        function initStatsInMemory() {
+            for (let i = 1; i <= 10; i++) {
+                if (!stats[i]) {
+                    stats[i] = { clearCount: 0, minCleared: false };
+                }
+            }
+        }
+        initStatsInMemory();
+
+        function isUnlocked(N) {
+            const data = stats[N];
+            if (!data) return false;
+            if (data.minCleared) return true;
+            const requiredClears = (N <= 3) ? 3 : 2;
+            return data.clearCount >= requiredClears;
+        }
+
+        const DISK_COLORS = [
+            'linear-gradient(135deg, #f43f5e, #be123c)', // 1: Red
+            'linear-gradient(135deg, #fb923c, #c2410c)', // 2: Orange
+            'linear-gradient(135deg, #facc15, #a16207)', // 3: Yellow
+            'linear-gradient(135deg, #4ade80, #15803d)', // 4: Green
+            'linear-gradient(135deg, #2dd4bf, #0f766e)', // 5: Teal
+            'linear-gradient(135deg, #38bdf8, #0369a1)', // 6: Sky Blue
+            'linear-gradient(135deg, #818cf8, #4338ca)', // 7: Indigo
+            'linear-gradient(135deg, #c084fc, #7e22ce)', // 8: Purple
+            'linear-gradient(135deg, #f472b6, #be185d)', // 9: Magenta
+            'linear-gradient(135deg, #94a3b8, #334155)'  // 10: Slate
+        ];
+
+        // DOM element references
+        const tabNormalMode = document.getElementById('tabNormalMode');
+        const tabFreeMode = document.getElementById('tabFreeMode');
+        const diskSelect = document.getElementById('diskSelect');
+        const movesLabel = document.getElementById('movesLabel');
+        const currentMovesDisplay = document.getElementById('currentMovesDisplay');
+        const minMovesContainer = document.getElementById('minMovesContainer');
+        const resetBtn = document.getElementById('resetBtn');
+        const undoBtn = document.getElementById('undoBtn');
+        const stepAnalysisPanel = document.getElementById('stepAnalysisPanel');
+        const freeModePanel = document.getElementById('freeModePanel');
+        const modeManualBtn = document.getElementById('modeManualBtn');
+        const modeAutoBtn = document.getElementById('modeAutoBtn');
+        const modeAutoLockIcon = document.getElementById('modeAutoLockIcon');
+        const modeAutoLabel = document.getElementById('modeAutoLabel');
+        const autoControls = document.getElementById('autoControls');
+        const speedSelect = document.getElementById('speedSelect');
+        const sliderWrapper = document.getElementById('sliderWrapper');
+        const stepSlider = document.getElementById('stepSlider');
+        const stepCurrentVal = document.getElementById('stepCurrentVal');
+        const stepMaxVal = document.getElementById('stepMaxVal');
+        const stepUnlockConditionText = document.getElementById('stepUnlockConditionText');
+        const prevStepBtn = document.getElementById('prevStepBtn');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const nextStepBtn = document.getElementById('nextStepBtn');
+        const playIcon = document.getElementById('playIcon');
+        const playText = document.getElementById('playText');
+        const freeAutoGoalBtn = document.getElementById('freeAutoGoalBtn');
+        const freeAutoGoalIcon = document.getElementById('freeAutoGoalIcon');
+        const freeAutoGoalText = document.getElementById('freeAutoGoalText');
+        const stage = document.getElementById('stage');
+        const disksContainer = document.getElementById('disksContainer');
+        const dragContainer = document.getElementById('dragContainer');
+        const targetBeam = document.getElementById('targetBeam');
+        const winModal = document.getElementById('winModal');
+        const winMoves = document.getElementById('winMoves');
+        const winMinMoves = document.getElementById('winMinMoves');
+        const winUnlockNotice = document.getElementById('winUnlockNotice');
+        const winResetBtn = document.getElementById('winResetBtn');
+        const warningModal = document.getElementById('warningModal');
+        const warningMessage = document.getElementById('warningMessage');
+        const closeWarningBtn = document.getElementById('closeWarningBtn');
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        /* 1:1 Pure Absolute Pixel Width Calculation */
+        function getDiskWidthPx(diskVal) {
+            const stageWidth = stage.clientWidth || 800;
+            const colWidth = stageWidth / 3;
+            const minWidth = 55;
+            const maxWidth = colWidth - 28;
+            if (numDisks === 1) return (minWidth + maxWidth) / 2;
+            return minWidth + (diskVal - 1) * ((maxWidth - minWidth) / (numDisks - 1));
+        }
+
+        function getDiskHeight() {
+            return Math.min(32, Math.max(20, Math.floor(260 / numDisks)));
+        }
+
+        /* Peg Position Mapping (Left: A, Middle: B, Right: C) */
+        function getPegX(pegKey) {
+            const stageWidth = stage.clientWidth || 800;
+            const colWidth = stageWidth / 3;
+            if (pegKey === 'A') return colWidth * 0.5; // Left (Goal)
+            if (pegKey === 'B') return colWidth * 1.5; // Middle
+            if (pegKey === 'C') return colWidth * 2.5; // Right (Start)
+            return colWidth * 2.5;
+        }
+
+        function getPegFromX(x) {
+            const stageWidth = stage.clientWidth || 800;
+            const colWidth = stageWidth / 3;
+            if (x < colWidth) return 'A';
+            if (x < colWidth * 2) return 'B';
+            return 'C';
+        }
+
+        function getDiskY(stackIndex) {
+            const stageHeight = stage.clientHeight || 460;
+            const baseY = stageHeight - 32; // Above bottom platform
+            const diskH = getDiskHeight();
+            const gap = 3;
+            return baseY - (stackIndex + 1) * (diskH + gap);
+        }
+
+        /* Standard Hanoi recursive solution (Start Peg C -> Goal Peg A via Aux Peg B) */
+        function computeStandardHanoiSolution(n, src, dst, aux, moves) {
+            if (n === 0) return;
+            computeStandardHanoiSolution(n - 1, src, aux, dst, moves);
+            moves.push({ diskVal: n, from: src, to: dst });
+            computeStandardHanoiSolution(n - 1, aux, dst, src, moves);
+        }
+
+        function initGame() {
+            stopAutoPlay();
+            cancelActiveDrag();
+            isAnimating = false;
+            animatingDiskInfo = null;
+
+            numDisks = parseInt(diskSelect.value, 10);
+            minMoves = Math.pow(2, numDisks) - 1;
+
+            solutionMoves = [];
+            // Start: Peg C, Goal: Peg A, Aux: Peg B
+            computeStandardHanoiSolution(numDisks, 'C', 'A', 'B', solutionMoves);
+
+            pegs = {
+                'A': [],
+                'B': [],
+                'C': Array.from({ length: numDisks }, (_, i) => numDisks - i)
+            };
+
+            currentMoves = 0;
+            historyStack = [];
+            currentStep = 0;
+            activeMode = 'manual';
+
+            updateUI();
+            renderBoard();
+            winModal.classList.add('hidden');
+            warningModal.classList.add('hidden');
+        }
+
+        function switchPrimaryMode(mode) {
+            if (isAnimating || isAutoPlaying) stopAutoPlay();
+            cancelActiveDrag();
+            primaryMode = mode;
+
+            if (primaryMode === 'normal') {
+                tabNormalMode.className = 'px-5 py-2.5 rounded-xl text-base sm:text-lg font-extrabold transition bg-sky-500 text-white shadow-md flex items-center gap-2 cursor-pointer';
+                tabFreeMode.className = 'px-5 py-2.5 rounded-xl text-base sm:text-lg font-extrabold text-slate-300 hover:text-white transition flex items-center gap-2 cursor-pointer';
+                stepAnalysisPanel.classList.remove('hidden');
+                freeModePanel.classList.add('hidden');
+                movesLabel.textContent = '現在の手数';
+            } else {
+                tabFreeMode.className = 'px-5 py-2.5 rounded-xl text-base sm:text-lg font-extrabold transition bg-amber-500 text-slate-950 shadow-md flex items-center gap-2 cursor-pointer';
+                tabNormalMode.className = 'px-5 py-2.5 rounded-xl text-base sm:text-lg font-extrabold text-slate-300 hover:text-white transition flex items-center gap-2 cursor-pointer';
+                stepAnalysisPanel.classList.add('hidden');
+                freeModePanel.classList.remove('hidden');
+                movesLabel.textContent = '配置移動回数';
+            }
+
+            initGame();
+        }
+
+        function updateUI() {
+            currentMovesDisplay.textContent = currentMoves;
+            const unlocked = isUnlocked(numDisks);
+            const reqClears = (numDisks <= 3) ? 3 : 2;
+            const curClears = stats[numDisks] ? stats[numDisks].clearCount : 0;
+
+            if (unlocked) {
+                minMovesContainer.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-unlock text-emerald-400 text-lg"></i>
+                        <span id="minMovesDisplay" class="text-3xl sm:text-4xl font-extrabold text-emerald-400 drop-shadow-md">${minMoves}</span>
+                    </div>
+                `;
+
+                modeAutoBtn.disabled = false;
+                modeAutoLockIcon.className = 'fa-solid fa-unlock text-emerald-400 text-sm';
+                modeAutoLabel.textContent = 'ステップ解析';
+                
+                if (activeMode === 'auto') {
+                    modeAutoBtn.className = 'px-4 py-2 rounded-lg text-sm sm:text-base font-bold transition bg-sky-500 text-white shadow flex items-center gap-2 cursor-pointer';
+                } else {
+                    modeAutoBtn.className = 'px-4 py-2 rounded-lg text-sm sm:text-base font-bold text-slate-300 hover:text-white transition cursor-pointer flex items-center gap-2 bg-slate-800/80 border border-slate-700';
+                }
+
+                stepUnlockConditionText.innerHTML = `<span class="text-emerald-400 font-semibold text-xs flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> 解析機能が解禁されています！</span>`;
+            } else {
+                minMovesContainer.innerHTML = `
+                    <div class="flex flex-col items-center">
+                        <span class="text-xs sm:text-sm font-extrabold text-amber-400 bg-amber-950/80 border border-amber-700/60 px-3 py-1 rounded-lg flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-lock text-amber-400 text-sm"></i>
+                            <span>クリア ${curClears}/${reqClears}回</span>
+                        </span>
+                        <span class="text-[11px] text-slate-400 mt-1 font-medium text-center">
+                            (最短1回 or 残り<strong class="text-amber-300 font-bold">${Math.max(0, reqClears - curClears)}</strong>回で解放)
+                        </span>
+                    </div>
+                `;
+
+                modeAutoBtn.disabled = true;
+                modeAutoLockIcon.className = 'fa-solid fa-lock text-amber-400 text-sm';
+                modeAutoLabel.innerHTML = `ステップ解析 <span class="text-xs bg-amber-950/80 border border-amber-700/80 text-amber-300 px-2 py-0.5 rounded-md ml-1 font-semibold">(クリア ${curClears}/${reqClears}回)</span>`;
+                modeAutoBtn.className = 'px-4 py-2 rounded-lg text-sm sm:text-base font-bold text-slate-400 opacity-60 cursor-not-allowed flex items-center gap-2 bg-slate-800/80 border border-slate-700';
+
+                stepUnlockConditionText.innerHTML = `<span class="text-amber-400 font-semibold text-xs flex items-center gap-1"><i class="fa-solid fa-lock text-xs"></i> 最短クリア または 通算${reqClears}回クリアで解放 (現在:${curClears}/${reqClears}回)</span>`;
+            }
+
+            undoBtn.disabled = historyStack.length === 0 || activeMode !== 'manual' || primaryMode !== 'normal' || isAnimating;
+            undoBtn.style.opacity = (historyStack.length > 0 && activeMode === 'manual' && primaryMode === 'normal' && !isAnimating) ? '1' : '0.5';
+
+            if (activeMode === 'manual') {
+                modeManualBtn.className = 'px-4 py-2 rounded-lg text-sm sm:text-base font-bold transition bg-sky-500 text-white shadow cursor-pointer';
+            } else {
+                modeManualBtn.className = 'px-4 py-2 rounded-lg text-sm sm:text-base font-bold text-slate-400 hover:text-white transition cursor-pointer';
+            }
+
+            if (activeMode === 'auto' && unlocked) {
+                autoControls.classList.remove('opacity-50', 'pointer-events-none');
+                speedSelect.disabled = false;
+                speedSelect.classList.remove('opacity-50', 'cursor-not-allowed');
+                sliderWrapper.classList.remove('opacity-50', 'pointer-events-none');
+                stepSlider.disabled = isAnimating;
+                stepSlider.classList.remove('cursor-not-allowed');
+            } else {
+                autoControls.classList.add('opacity-50', 'pointer-events-none');
+                speedSelect.disabled = true;
+                speedSelect.classList.add('opacity-50', 'cursor-not-allowed');
+                sliderWrapper.classList.add('opacity-50', 'pointer-events-none');
+                stepSlider.disabled = true;
+                stepSlider.classList.add('cursor-not-allowed');
+            }
+
+            stepMaxVal.textContent = unlocked ? minMoves : '?';
+            stepSlider.max = minMoves;
+            stepSlider.value = currentStep;
+            stepCurrentVal.textContent = currentStep;
+        }
+
+        function renderBoard() {
+            disksContainer.innerHTML = '';
+            const diskH = getDiskHeight();
+
+            ['A', 'B', 'C'].forEach(pegKey => {
+                const stack = pegs[pegKey];
+                stack.forEach((diskVal, stackIdx) => {
+                    // Hide disk if currently being dragged in block
+                    if (isDragging && sourcePeg === pegKey && draggedBlock.includes(diskVal)) {
+                        return;
+                    }
+
+                    // Hide disk if currently animating
+                    if (animatingDiskInfo && animatingDiskInfo.fromPeg === pegKey && animatingDiskInfo.fromStackIdx === stackIdx) {
+                        return;
+                    }
+
+                    const widthPx = getDiskWidthPx(diskVal);
+                    const pegX = getPegX(pegKey);
+                    const diskY = getDiskY(stackIdx);
+
+                    const diskEl = document.createElement('div');
+                    diskEl.className = `disk-element no-touch-action ${diskVal === 1 ? 'disk-hitbox-1' : ''}`;
+                    diskEl.dataset.diskVal = diskVal;
+                    diskEl.dataset.pegKey = pegKey;
+                    diskEl.dataset.stackIdx = stackIdx;
+                    diskEl.style.width = `${widthPx}px`;
+                    diskEl.style.height = `${diskH}px`;
+                    diskEl.style.left = `${pegX - widthPx / 2}px`;
+                    diskEl.style.top = `${diskY}px`;
+                    diskEl.style.background = DISK_COLORS[(diskVal - 1) % DISK_COLORS.length];
+                    diskEl.textContent = diskVal;
+
+                    const isTopDisk = (stackIdx === stack.length - 1);
+                    const canGrab = (primaryMode === 'free') || (primaryMode === 'normal' && isTopDisk);
+
+                    if (canGrab && activeMode === 'manual' && !isAnimating) {
+                        diskEl.style.cursor = 'grab';
+                        diskEl.addEventListener('pointerdown', handlePointerDown);
+                    } else {
+                        diskEl.style.cursor = 'default';
+                    }
+
+                    disksContainer.appendChild(diskEl);
+                });
+            });
+        }
+
+        /**
+         * Validates whether all pegs strictly obey Hanoi hierarchy
+         */
+        function isBoardValidForHanoi() {
+            for (let p of ['A', 'B', 'C']) {
+                let stack = pegs[p];
+                for (let i = 0; i < stack.length - 1; i++) {
+                    if (stack[i] <= stack[i + 1]) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /**
+         * Computes optimal move sequence from arbitrary valid board configuration to Goal Peg A
+         */
+        function solveHanoiFromArbitraryState() {
+            let currentPeg = {};
+            ['A', 'B', 'C'].forEach(p => {
+                pegs[p].forEach(diskVal => {
+                    currentPeg[diskVal] = p;
+                });
+            });
+
+            let moves = [];
+
+            function solveRecursive(k, targetPeg) {
+                if (k <= 0) return;
+                let curr = currentPeg[k];
+                if (curr === targetPeg) {
+                    solveRecursive(k - 1, targetPeg);
+                } else {
+                    let auxPeg = ['A', 'B', 'C'].find(p => p !== curr && p !== targetPeg);
+                    solveRecursive(k - 1, auxPeg);
+                    moves.push({ diskVal: k, from: curr, to: targetPeg });
+                    currentPeg[k] = targetPeg;
+                    solveRecursive(k - 1, targetPeg);
+                }
+            }
+
+            solveRecursive(numDisks, 'A');
+            return moves;
+        }
+
+        function getStageDuration() {
+            const speed = parseInt(speedSelect.value, 10);
+            if (speed >= 1200) return 200;
+            if (speed >= 600) return 140;
+            return 75;
+        }
+
+        async function animate3StagePass(diskVal, fromPeg, toPeg, fromStackIdx, toStackIdx) {
+            isAnimating = true;
+
+            const widthPx = getDiskWidthPx(diskVal);
+            const diskH = getDiskHeight();
+            const startX = getPegX(fromPeg);
+            const startY = getDiskY(fromStackIdx);
+            const endX = getPegX(toPeg);
+            const endY = getDiskY(toStackIdx);
+            const topClearanceY = 25;
+
+            animatingDiskInfo = { diskVal, fromPeg, fromStackIdx };
+            renderBoard();
+
+            const flyingDisk = document.createElement('div');
+            flyingDisk.className = 'disk-element flying-disk';
+            flyingDisk.style.setProperty('transition', 'none', 'important');
+            flyingDisk.style.width = `${widthPx}px`;
+            flyingDisk.style.height = `${diskH}px`;
+            flyingDisk.style.left = `${startX - widthPx / 2}px`;
+            flyingDisk.style.top = `${startY}px`;
+            flyingDisk.style.background = DISK_COLORS[(diskVal - 1) % DISK_COLORS.length];
+            flyingDisk.textContent = diskVal;
+
+            disksContainer.appendChild(flyingDisk);
+
+            // Reflow to lock initial position before transition execution
+            void flyingDisk.offsetHeight;
+
+            const stageDur = getStageDuration();
+            flyingDisk.style.setProperty(
+                'transition',
+                `left ${stageDur}ms cubic-bezier(0.25, 1, 0.5, 1), top ${stageDur}ms cubic-bezier(0.25, 1, 0.5, 1)`,
+                'important'
+            );
+
+            // Stage 1: Ascend
+            flyingDisk.style.top = `${topClearanceY}px`;
+            await sleep(stageDur + 10);
+
+            // Stage 2: Translate
+            flyingDisk.style.left = `${endX - widthPx / 2}px`;
+            await sleep(stageDur + 10);
+
+            // Stage 3: Descend
+            flyingDisk.style.top = `${endY}px`;
+            await sleep(stageDur + 10);
+
+            flyingDisk.remove();
+            animatingDiskInfo = null;
+        }
+
+        function computeBoardForStep(K) {
+            const stepPegs = { 'A': [], 'B': [], 'C': Array.from({ length: numDisks }, (_, i) => numDisks - i) };
+            for (let i = 0; i < K && i < solutionMoves.length; i++) {
+                const move = solutionMoves[i];
+                stepPegs[move.from].pop();
+                stepPegs[move.to].push(move.diskVal);
+            }
+            return stepPegs;
+        }
+
+        function jumpToStep(K) {
+            if (!isUnlocked(numDisks) || isAnimating) return;
+            currentStep = Math.max(0, Math.min(minMoves, K));
+            pegs = computeBoardForStep(currentStep);
+            currentMoves = currentStep;
+            updateUI();
+            renderBoard();
+        }
+
+        async function stepForward() {
+            if (!isUnlocked(numDisks) || isAnimating || currentStep >= minMoves) return;
+
+            const move = solutionMoves[currentStep];
+            if (!move) return;
+
+            const { diskVal, from, to } = move;
+            const fromStackIdx = pegs[from].length - 1;
+            const toStackIdx = pegs[to].length;
+
+            await animate3StagePass(diskVal, from, to, fromStackIdx, toStackIdx);
+
+            pegs[from].pop();
+            pegs[to].push(diskVal);
+            currentStep++;
+            currentMoves = currentStep;
+
+            isAnimating = false;
+            updateUI();
+            renderBoard();
+        }
+
+        function stepBackward() {
+            if (!isUnlocked(numDisks) || isAnimating || currentStep <= 0) return;
+            jumpToStep(currentStep - 1);
+        }
+
+        async function startAutoPlay() {
+            if (!isUnlocked(numDisks) || isAutoPlaying) return;
+
+            if (currentStep >= minMoves) {
+                jumpToStep(0);
+            }
+
+            isAutoPlaying = true;
+            playIcon.className = 'fa-solid fa-pause text-lg';
+            playText.textContent = '停止';
+            updateUI();
+
+            while (isAutoPlaying && currentStep < minMoves) {
+                const speed = parseInt(speedSelect.value, 10);
+                await stepForward();
+                if (!isAutoPlaying) break;
+                const gap = Math.max(30, speed - (getStageDuration() * 3 + 30));
+                await sleep(gap);
+            }
+
+            if (currentStep >= minMoves) {
+                stopAutoPlay();
+            }
+        }
+
+        function stopAutoPlay() {
+            isAutoPlaying = false;
+            playIcon.className = 'fa-solid fa-play text-lg';
+            playText.textContent = '自動再生';
+            freeAutoGoalIcon.className = 'fa-solid fa-play';
+            freeAutoGoalText.textContent = '自動ゴール (Peg A)';
+            updateUI();
+        }
+
+        function toggleAutoPlay() {
+            if (!isUnlocked(numDisks)) return;
+            if (isAutoPlaying) {
+                stopAutoPlay();
+            } else {
+                startAutoPlay();
+            }
+        }
+
+        /* Free Mode Auto Goal Execution */
+        async function runFreeAutoGoal() {
+            if (isAutoPlaying) {
+                stopAutoPlay();
+                return;
+            }
+
+            if (!isBoardValidForHanoi()) {
+                warningMessage.textContent = 'ルールを無視した配置（小の上に大）があるため、自動ゴールできません。';
+                warningModal.classList.remove('hidden');
+                return;
+            }
+
+            const freeMoves = solveHanoiFromArbitraryState();
+            if (freeMoves.length === 0) {
+                warningMessage.textContent = 'すでにすべての円盤が Peg A に配置されています。';
+                warningModal.classList.remove('hidden');
+                return;
+            }
+
+            isAutoPlaying = true;
+            freeAutoGoalIcon.className = 'fa-solid fa-pause';
+            freeAutoGoalText.textContent = '停止';
+
+            for (let i = 0; i < freeMoves.length && isAutoPlaying; i++) {
+                const move = freeMoves[i];
+                const fromStackIdx = pegs[move.from].length - 1;
+                const toStackIdx = pegs[move.to].length;
+
+                await animate3StagePass(move.diskVal, move.from, move.to, fromStackIdx, toStackIdx);
+
+                pegs[move.from].pop();
+                pegs[move.to].push(move.diskVal);
+                currentMoves++;
+                currentMovesDisplay.textContent = currentMoves;
+                renderBoard();
+
+                await sleep(100);
+            }
+
+            stopAutoPlay();
+            if (pegs['A'].length === numDisks) {
+                checkWin();
+            }
+        }
+
+        function cancelActiveDrag() {
+            if (!isDragging) return;
+            isDragging = false;
+            draggedBlock = [];
+            sourcePeg = null;
+            dragContainer.innerHTML = '';
+            dragContainer.classList.add('hidden');
+            targetBeam.classList.add('hidden');
+            ['A', 'B', 'C'].forEach(p => {
+                document.getElementById(`pegCol-${p}`).classList.remove('peg-target-active');
+            });
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('pointerup', handlePointerUp);
+            window.removeEventListener('pointercancel', handlePointerUp);
+            renderBoard();
+        }
+
+        function handlePointerDown(e) {
+            if (activeMode !== 'manual' || isAnimating) return;
+
+            const diskEl = e.currentTarget;
+            sourcePeg = diskEl.dataset.pegKey;
+            const stackIdx = parseInt(diskEl.dataset.stackIdx, 10);
+            const stack = pegs[sourcePeg];
+
+            if (primaryMode === 'free') {
+                draggedBlock = stack.slice(stackIdx);
+            } else {
+                if (stackIdx !== stack.length - 1) return;
+                draggedBlock = [stack[stackIdx]];
+            }
+
+            if (draggedBlock.length === 0) return;
+
+            isDragging = true;
+            activePointerId = e.pointerId;
+
+            dragContainer.innerHTML = '';
+            dragContainer.classList.remove('hidden');
+
+            const diskH = getDiskHeight();
+
+            draggedBlock.forEach((diskVal, idx) => {
+                const widthPx = getDiskWidthPx(diskVal);
+                const floatDisk = document.createElement('div');
+                floatDisk.className = 'disk-element flying-disk no-touch-action';
+                floatDisk.style.width = `${widthPx}px`;
+                floatDisk.style.height = `${diskH}px`;
+                floatDisk.style.background = DISK_COLORS[(diskVal - 1) % DISK_COLORS.length];
+                floatDisk.textContent = diskVal;
+                floatDisk.id = `dragged-disk-${diskVal}`;
+
+                dragContainer.appendChild(floatDisk);
+            });
+
+            renderBoard();
+
+            updateDragPosition(e.clientX, e.clientY);
+
+            targetBeam.classList.remove('hidden');
+
+            window.addEventListener('pointermove', handlePointerMove);
+            window.addEventListener('pointerup', handlePointerUp);
+            window.addEventListener('pointercancel', handlePointerUp);
+        }
+
+        function updateDragPosition(clientX, clientY) {
+            const rect = stage.getBoundingClientRect();
+            const pointerX = clientX - rect.left;
+            const pointerY = clientY - rect.top;
+
+            const diskH = getDiskHeight();
+            const gap = 3;
+
+            draggedBlock.forEach((diskVal, idx) => {
+                const widthPx = getDiskWidthPx(diskVal);
+                const floatDisk = document.getElementById(`dragged-disk-${diskVal}`);
+                if (floatDisk) {
+                    const itemY = (pointerY - 60) - (diskH / 2) - (idx * (diskH + gap));
+                    floatDisk.style.left = `${pointerX - widthPx / 2}px`;
+                    floatDisk.style.top = `${itemY}px`;
+                }
+            });
+
+            updateTargetBeam(pointerX);
+        }
+
+        function handlePointerMove(e) {
+            if (!isDragging) return;
+            updateDragPosition(e.clientX, e.clientY);
+        }
+
+        function updateTargetBeam(pointerX) {
+            const targetPeg = getPegFromX(pointerX);
+            const targetX = getPegX(targetPeg);
+            targetBeam.style.left = `${targetX - 2}px`;
+
+            ['A', 'B', 'C'].forEach(p => {
+                const colEl = document.getElementById(`pegCol-${p}`);
+                if (p === targetPeg) {
+                    colEl.classList.add('peg-target-active');
+                } else {
+                    colEl.classList.remove('peg-target-active');
+                }
+            });
+        }
+
+        function handlePointerUp(e) {
+            if (!isDragging) return;
+
+            const rect = stage.getBoundingClientRect();
+            const pointerX = e.clientX - rect.left;
+            const targetPeg = getPegFromX(pointerX);
+
+            const baseDiskVal = draggedBlock[0];
+            const targetStack = pegs[targetPeg];
+
+            let isLegal = false;
+
+            if (primaryMode === 'free') {
+                isLegal = (targetPeg !== sourcePeg);
+            } else {
+                isLegal = (targetPeg !== sourcePeg) && 
+                          (targetStack.length === 0 || targetStack[targetStack.length - 1] > baseDiskVal);
+            }
+
+            if (isLegal) {
+                if (primaryMode === 'normal') {
+                    historyStack.push({
+                        from: sourcePeg,
+                        to: targetPeg,
+                        diskVal: baseDiskVal
+                    });
+                }
+
+                pegs[sourcePeg] = pegs[sourcePeg].filter(v => !draggedBlock.includes(v));
+                pegs[targetPeg].push(...draggedBlock);
+
+                currentMoves++;
+                currentStep = currentMoves;
+
+                updateUI();
+                checkWin();
+            }
+
+            cancelActiveDrag();
+        }
+
+        function checkWin() {
+            if (pegs['A'].length === numDisks) {
+                const wasUnlockedBefore = isUnlocked(numDisks);
+
+                if (primaryMode === 'normal') {
+                    stats[numDisks].clearCount++;
+                    if (currentMoves === minMoves) {
+                        stats[numDisks].minCleared = true;
+                    }
+                }
+
+                const isUnlockedNow = isUnlocked(numDisks);
+                updateUI();
+
+                setTimeout(() => {
+                    winMoves.textContent = currentMoves;
+                    winMinMoves.textContent = isUnlockedNow ? minMoves : '🔒';
+
+                    const reqClears = (numDisks <= 3) ? 3 : 2;
+                    const count = stats[numDisks].clearCount;
+
+                    let noticeHTML = '';
+                    if (!wasUnlockedBefore && isUnlockedNow) {
+                        noticeHTML = `
+                            <div class="text-emerald-400 font-bold flex items-center gap-1.5 text-sm mb-1">
+                                <i class="fa-solid fa-unlock text-base"></i> 解放条件を達成しました！
+                            </div>
+                            <div class="text-slate-300">
+                                最短手数表示および「ステップ解析モード」が解禁されました。
+                            </div>
+                        `;
+                    } else if (isUnlockedNow) {
+                        noticeHTML = `
+                            <div class="text-emerald-300 font-semibold text-xs">
+                                <i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> 最短手数表示およびステップ解析は解禁済みです。
+                            </div>
+                        `;
+                    } else {
+                        const remaining = reqClears - count;
+                        noticeHTML = `
+                            <div class="text-amber-300 font-bold text-xs mb-1">
+                                <i class="fa-solid fa-lock text-amber-400 mr-1"></i> 解放条件未達成 (${count}/${reqClears}回クリア)
+                            </div>
+                            <div class="text-slate-300 text-xs">
+                                最短手数(${minMoves}手)でクリアする、または あと<strong class="text-amber-400 font-bold">${remaining}回</strong>クリアすると「最短手数表示」および「ステップ解析」が解禁されます。
+                            </div>
+                        `;
+                    }
+
+                    winUnlockNotice.innerHTML = noticeHTML;
+                    winModal.classList.remove('hidden');
+                }, 150);
+            }
+        }
+
+        // Event listener bindings
+        tabNormalMode.addEventListener('click', () => switchPrimaryMode('normal'));
+        tabFreeMode.addEventListener('click', () => switchPrimaryMode('free'));
+
+        diskSelect.addEventListener('change', () => {
+            // Stats strictly retained during disk changes across page session
+            initGame();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            initGame();
+        });
+
+        undoBtn.addEventListener('click', () => {
+            if (primaryMode !== 'normal' || activeMode !== 'manual' || historyStack.length === 0 || isAnimating) return;
+            const lastMove = historyStack.pop();
+            const diskVal = pegs[lastMove.to].pop();
+            pegs[lastMove.from].push(diskVal);
+            currentMoves = Math.max(0, currentMoves - 1);
+            currentStep = currentMoves;
+            updateUI();
+            renderBoard();
+        });
+
+        modeManualBtn.addEventListener('click', () => {
+            stopAutoPlay();
+            activeMode = 'manual';
+            updateUI();
+            renderBoard();
+        });
+
+        modeAutoBtn.addEventListener('click', () => {
+            if (!isUnlocked(numDisks)) return;
+            activeMode = 'auto';
+            updateUI();
+            renderBoard();
+        });
+
+        stepSlider.addEventListener('input', (e) => {
+            if (!isUnlocked(numDisks) || isAnimating) return;
+            stopAutoPlay();
+            jumpToStep(parseInt(e.target.value, 10));
+        });
+
+        prevStepBtn.addEventListener('click', () => {
+            stopAutoPlay();
+            stepBackward();
+        });
+
+        nextStepBtn.addEventListener('click', () => {
+            stopAutoPlay();
+            stepForward();
+        });
+
+        playPauseBtn.addEventListener('click', toggleAutoPlay);
+        freeAutoGoalBtn.addEventListener('click', runFreeAutoGoal);
+
+        winResetBtn.addEventListener('click', () => {
+            winModal.classList.add('hidden');
+            initGame();
+        });
+
+        closeWarningBtn.addEventListener('click', () => {
+            warningModal.classList.add('hidden');
+        });
+
+        window.addEventListener('resize', () => {
+            renderBoard();
+        });
+
+        window.onload = function() {
+            initGame();
+        };
+    </script>
+</body>
+</html>

@@ -123,6 +123,27 @@
             background: rgba(15, 23, 42, 0.88);
             backdrop-filter: blur(12px);
         }
+    
+        #stage { height:clamp(300px,calc(100dvh - 110px),460px) !important; }
+        #stage .rounded-t-lg { height:calc(100% - 100px) !important; }
+        [hidden] { display: none !important; }
+        .help-actions { display:flex; gap:10px; align-items:center; }
+        .help-actions a,.help-actions button,.rules-back { font:inherit; font-size:14px; font-weight:700; color:#cbd5e1; border:1px solid #475569; background:#1e293b; border-radius:10px; padding:6px 16px; text-decoration:none; cursor:pointer; }
+        .help-actions a:hover,.help-actions button:hover,.rules-back:hover { color:#f8fafc; border-color:#38bdf8; }
+        .help-actions a:focus-visible,.help-actions button:focus-visible,.rules-back:focus-visible,summary:focus-visible { outline:3px solid #38bdf8; outline-offset:3px; }
+        #analysisDetails summary { cursor:pointer; font-size:14px; color:#cbd5e1; padding:6px 0; }
+        .rules-section { width:100%; margin-top:64px; margin-bottom:32px; padding:24px; border:1px solid #475569; border-radius:16px; background:#1e293b; line-height:1.8; user-select:text; scroll-margin-top:16px; }
+        .rules-section h2 { font-size:22px; font-weight:800; margin-bottom:12px; }
+        .rules-section ol { list-style:none; padding:0; margin:16px 0 24px; }
+        .rules-section li+li { margin-top:12px; }
+        #puzzle { scroll-margin-top:8px; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; }
+        #puzzle::before { content:""; }
+        #puzzle h1 { grid-column:2; justify-self:center; }
+        #puzzle .help-actions { grid-column:3; justify-self:end; }
+        #puzzle h1 { font-size:clamp(22px,3vw,32px); gap:6px; }
+        .help-actions { flex-shrink:0; }
+        @media(max-width:600px) { #puzzle { grid-template-columns:1fr; } #puzzle::before { display:none; } #puzzle h1 { grid-column:1; font-size:22px; } #puzzle .help-actions { grid-column:1; } .help-actions { gap:6px; } .help-actions a,.help-actions button { padding:6px 10px; } }
+        @media(max-width:600px) { #stage > div:first-child > div > div:first-child { padding:6px 8px; font-size:13px; gap:4px; } }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start p-2 sm:p-4 overflow-x-hidden">
@@ -130,25 +151,70 @@
     <div class="w-full max-w-5xl flex flex-col items-center">
         
         <!-- Header Title Bar -->
-        <header class="w-full text-center my-2 flex flex-col items-center gap-2">
+        <header id="puzzle" tabindex="-1" class="w-full text-center my-2 flex flex-col items-center gap-2">
             <h1 class="text-2xl sm:text-3xl font-extrabold tracking-wide text-sky-400 flex items-center justify-center gap-3">
                 <i class="fa-solid fa-cubes-stacked text-amber-400"></i>
                 ハノイの塔
             </h1>
 
-            <!-- Primary Mode Switcher Tabs -->
-            <div class="flex items-center gap-2 bg-slate-800 p-1.5 rounded-2xl border border-slate-700 shadow-lg mt-1">
-                <button id="tabNormalMode" class="px-5 py-2.5 rounded-xl text-base sm:text-lg font-extrabold transition bg-sky-500 text-white shadow-md flex items-center gap-2 cursor-pointer">
-                    <i class="fa-solid fa-gamepad"></i> 通常モード
-                </button>
-                <button id="tabFreeMode" class="px-5 py-2.5 rounded-xl text-base sm:text-lg font-extrabold text-slate-300 hover:text-white transition flex items-center gap-2 cursor-pointer">
-                    <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> フリーモード (解説用)
-                </button>
-            </div>
+            <nav class="help-actions" aria-label="操作の補助">
+                <a href="#rules">ルール</a>
+                <button id="tabFreeMode" type="button" aria-controls="freeModePanel" aria-expanded="false">解説</button>
+                <button id="tabNormalMode" type="button" hidden>戻る</button>
+            </nav>
         </header>
 
+        <!-- Stage Container -->
+        <div id="stage" class="w-full relative mt-2 bg-slate-900 border-2 border-slate-700/80 rounded-2xl no-touch-action shadow-2xl overflow-hidden" style="height: 460px;">
+            
+            <!-- Target Columns Grid (A: Far Left, B: Middle, C: Far Right) -->
+            <div class="absolute inset-0 grid grid-cols-3 h-full w-full pointer-events-none">
+                
+                <!-- A (FAR LEFT - GOAL) -->
+                <div id="pegCol-A" class="relative flex flex-col items-center justify-end pb-8 border-r border-slate-800/60 transition-colors duration-200">
+                    <div class="absolute top-4 bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 px-4 py-1.5 rounded-full text-base font-extrabold shadow-lg flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-amber-400"></i> A（ゴール）
+                    </div>
+                    <!-- Rod -->
+                    <div class="w-5 bg-gradient-to-t from-slate-600 via-slate-400 to-slate-500 rounded-t-lg shadow-inner" style="height: 330px;"></div>
+                </div>
+
+                <!-- B (MIDDLE - AUX) -->
+                <div id="pegCol-B" class="relative flex flex-col items-center justify-end pb-8 border-r border-slate-800/60 transition-colors duration-200">
+                    <div class="absolute top-4 bg-slate-800/90 border border-slate-600/80 text-slate-300 px-4 py-1.5 rounded-full text-base font-extrabold shadow">
+                        B
+                    </div>
+                    <!-- Rod -->
+                    <div class="w-5 bg-gradient-to-t from-slate-600 via-slate-400 to-slate-500 rounded-t-lg shadow-inner" style="height: 330px;"></div>
+                </div>
+
+                <!-- C (FAR RIGHT - START) -->
+                <div id="pegCol-C" class="relative flex flex-col items-center justify-end pb-8 transition-colors duration-200">
+                    <div class="absolute top-4 bg-sky-950/80 border border-sky-500/50 text-sky-300 px-4 py-1.5 rounded-full text-base font-extrabold shadow-lg flex items-center gap-2">
+                        <i class="fa-solid fa-flag text-sky-400"></i> C（スタート）
+                    </div>
+                    <!-- Rod -->
+                    <div class="w-5 bg-gradient-to-t from-slate-600 via-slate-400 to-slate-500 rounded-t-lg shadow-inner" style="height: 330px;"></div>
+                </div>
+
+            </div>
+
+            <!-- Base Platform -->
+            <div class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-r from-amber-950 via-amber-900 to-amber-950 border-t-2 border-amber-700 shadow-2xl"></div>
+
+            <!-- Vertical Alignment Beam Guide -->
+            <div id="targetBeam" class="absolute top-0 bottom-8 w-1 bg-sky-400/50 border-l border-r border-sky-300 hidden pointer-events-none transition-all duration-75"></div>
+
+            <!-- Dynamic Disks Container -->
+            <div id="disksContainer" class="absolute inset-0 no-touch-action"></div>
+
+            <!-- Drag Block Overlay Container -->
+            <div id="dragContainer" class="hidden"></div>
+
+        </div>
+
         <!-- Top Controls Display Panel -->
-        <div class="w-full bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col gap-4">
+        <div class="w-full mt-3 bg-slate-800/90 border border-slate-700/80 rounded-2xl p-3 sm:p-3 shadow-xl flex flex-col gap-2">
             
             <!-- Row 1: Disk Count Selector, Stat Displays, Action Buttons -->
             <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
@@ -157,7 +223,7 @@
                 <div class="md:col-span-3 bg-slate-900/80 border border-slate-700/60 rounded-xl p-3 flex flex-col justify-center items-center">
                     <label for="diskSelect" class="text-slate-300 text-xs sm:text-sm font-bold mb-1.5 flex items-center gap-2">
                         <i class="fa-solid fa-layer-group text-sky-400"></i>
-                        円盤の枚数 (Disks):
+                        円盤の枚数
                     </label>
                     <div class="flex items-center gap-2 w-full justify-center">
                         <select id="diskSelect" class="bg-slate-800 border-2 border-sky-500 text-sky-200 text-lg sm:text-xl font-bold rounded-xl px-4 py-1.5 text-center cursor-pointer hover:bg-slate-700 transition">
@@ -183,7 +249,7 @@
                     </div>
                     <div class="h-10 w-px bg-slate-700"></div>
                     <div class="text-center flex flex-col items-center">
-                        <span class="text-xs sm:text-sm font-bold text-slate-400 block mb-1">最短手数 (Min Moves)</span>
+                        <span class="text-xs sm:text-sm font-bold text-slate-400 block mb-1">最短手数</span>
                         <div id="minMovesContainer" class="flex items-center justify-center min-h-[44px]">
                             <!-- Dynamic Content -->
                         </div>
@@ -203,12 +269,13 @@
                 </div>
             </div>
 
+            <details id="analysisDetails"><summary id="analysisSummary">手順を見る（クリア後）</summary>
             <!-- NORMAL MODE: Step Analysis Panel -->
             <div id="stepAnalysisPanel" class="bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 sm:p-4 flex flex-col gap-3 transition-all duration-300">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div class="flex items-center gap-2 bg-slate-800 p-1 rounded-xl border border-slate-700">
                         <button id="modeManualBtn" class="px-4 py-2 rounded-lg text-sm sm:text-base font-bold transition bg-sky-500 text-white shadow cursor-pointer">
-                            <i class="fa-solid fa-hand-pointer mr-1"></i> 手動モード
+                            <i class="fa-solid fa-hand-pointer mr-1"></i> 手動
                         </button>
                         <button id="modeAutoBtn" class="px-4 py-2 rounded-lg text-sm sm:text-base font-bold transition flex items-center gap-2">
                             <i id="modeAutoLockIcon" class="fa-solid fa-lock text-amber-400 text-sm"></i>
@@ -243,7 +310,7 @@
                 <!-- Step Range Slider -->
                 <div id="sliderWrapper" class="flex flex-col gap-1 mt-1 opacity-50 pointer-events-none">
                     <div class="flex justify-between items-center text-xs sm:text-sm font-bold text-slate-300">
-                        <span id="stepLabelText">Step <span id="stepCurrentVal" class="text-sky-400 font-extrabold text-base">0</span> / <span id="stepMaxVal" class="text-emerald-400">?</span></span>
+                        <span id="stepLabelText">手順 <span id="stepCurrentVal" class="text-sky-400 font-extrabold text-base">0</span> / <span id="stepMaxVal" class="text-emerald-400">?</span></span>
                         <span id="stepUnlockConditionText" class="text-amber-400 font-semibold text-xs flex items-center gap-1">
                             <i class="fa-solid fa-lock text-xs"></i> クリア条件を満たすとスライダーが操作可能になります
                         </span>
@@ -252,18 +319,19 @@
                 </div>
             </div>
 
+            </details>
             <!-- FREE MODE: Panel (Explanation Mode) -->
             <div id="freeModePanel" class="bg-amber-950/40 border border-amber-600/60 rounded-xl p-3 sm:p-4 flex flex-col gap-3 hidden">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div class="flex items-center gap-2 text-amber-300 font-extrabold text-sm sm:text-base">
                         <i class="fa-solid fa-hand-holding-hand text-lg"></i>
-                        フリーモード（解説用）: 複数枚ブロックドラッグ＆ルール無視配置が可能
+                        解説：自由に配置して手順を確かめられます
                     </div>
 
                     <!-- Free Mode Auto Goal Button -->
                     <button id="freeAutoGoalBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold text-base sm:text-lg shadow-lg flex items-center gap-2 transition active:scale-95 cursor-pointer">
                         <i id="freeAutoGoalIcon" class="fa-solid fa-play"></i>
-                        <span id="freeAutoGoalText">自動ゴール (Peg A)</span>
+                        <span id="freeAutoGoalText">自動ゴール</span>
                     </button>
                 </div>
                 <p class="text-xs sm:text-sm text-slate-300 font-medium">
@@ -274,55 +342,15 @@
 
         </div>
 
-        <!-- Stage Container -->
-        <div id="stage" class="w-full relative mt-2 bg-slate-900 border-2 border-slate-700/80 rounded-2xl no-touch-action shadow-2xl overflow-hidden" style="height: 460px;">
-            
-            <!-- Target Peg Columns Grid (Peg A: Far Left, Peg B: Middle, Peg C: Far Right) -->
-            <div class="absolute inset-0 grid grid-cols-3 h-full w-full pointer-events-none">
-                
-                <!-- Peg A (FAR LEFT - GOAL) -->
-                <div id="pegCol-A" class="relative flex flex-col items-center justify-end pb-8 border-r border-slate-800/60 transition-colors duration-200">
-                    <div class="absolute top-4 bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 px-4 py-1.5 rounded-full text-base font-extrabold shadow-lg flex items-center gap-2">
-                        <i class="fa-solid fa-trophy text-amber-400"></i> Peg A (ゴール / Goal)
-                    </div>
-                    <!-- Rod -->
-                    <div class="w-5 bg-gradient-to-t from-slate-600 via-slate-400 to-slate-500 rounded-t-lg shadow-inner" style="height: 330px;"></div>
-                </div>
-
-                <!-- Peg B (MIDDLE - AUX) -->
-                <div id="pegCol-B" class="relative flex flex-col items-center justify-end pb-8 border-r border-slate-800/60 transition-colors duration-200">
-                    <div class="absolute top-4 bg-slate-800/90 border border-slate-600/80 text-slate-300 px-4 py-1.5 rounded-full text-base font-extrabold shadow">
-                        Peg B
-                    </div>
-                    <!-- Rod -->
-                    <div class="w-5 bg-gradient-to-t from-slate-600 via-slate-400 to-slate-500 rounded-t-lg shadow-inner" style="height: 330px;"></div>
-                </div>
-
-                <!-- Peg C (FAR RIGHT - START) -->
-                <div id="pegCol-C" class="relative flex flex-col items-center justify-end pb-8 transition-colors duration-200">
-                    <div class="absolute top-4 bg-sky-950/80 border border-sky-500/50 text-sky-300 px-4 py-1.5 rounded-full text-base font-extrabold shadow-lg flex items-center gap-2">
-                        <i class="fa-solid fa-flag text-sky-400"></i> Peg C (スタート / Start)
-                    </div>
-                    <!-- Rod -->
-                    <div class="w-5 bg-gradient-to-t from-slate-600 via-slate-400 to-slate-500 rounded-t-lg shadow-inner" style="height: 330px;"></div>
-                </div>
-
-            </div>
-
-            <!-- Base Platform -->
-            <div class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-r from-amber-950 via-amber-900 to-amber-950 border-t-2 border-amber-700 shadow-2xl"></div>
-
-            <!-- Vertical Alignment Beam Guide -->
-            <div id="targetBeam" class="absolute top-0 bottom-8 w-1 bg-sky-400/50 border-l border-r border-sky-300 hidden pointer-events-none transition-all duration-75"></div>
-
-            <!-- Dynamic Disks Container -->
-            <div id="disksContainer" class="absolute inset-0 no-touch-action"></div>
-
-            <!-- Drag Block Overlay Container -->
-            <div id="dragContainer" class="hidden"></div>
-
-        </div>
-
+        <section id="rules" tabindex="-1" class="rules-section" aria-labelledby="rules-title">
+            <h2 id="rules-title">ルール</h2>
+            <p>Cに積まれた穴の開いた円盤を、次のルールに従って、すべてAへ移動させるパズルです。</p>
+            <ol>
+                <li><strong>ルール1</strong>：円盤は一度に1枚ずつ、A・B・Cのいずれかの杭へ移動できます。</li>
+                <li><strong>ルール2</strong>：小さな円盤の上に、それより大きな円盤を置くことはできません。</li>
+            </ol>
+            <a class="rules-back" href="#puzzle">戻る</a>
+        </section>
     </div>
 
     <!-- Victory Modal -->
@@ -333,7 +361,7 @@
             </div>
             <h2 class="text-3xl font-black text-white mb-2">クリアおめでとう！</h2>
             <p class="text-slate-300 text-base mb-4">
-                すべての円盤を <strong class="text-emerald-400">Peg A (左端)</strong> に移動させました！
+                すべての円盤を <strong class="text-emerald-400">A</strong> に移動させました！
             </p>
             
             <div class="bg-slate-900/90 border border-slate-700 rounded-2xl p-4 w-full mb-4 grid grid-cols-2 gap-2">
@@ -378,9 +406,9 @@
         let numDisks = 3;
         
         // FIXED PEG LAYOUT:
-        // Peg A: Leftmost (Goal)
-        // Peg B: Middle
-        // Peg C: Rightmost (Start)
+        // A: Leftmost (Goal)
+        // B: Middle
+        // C: Rightmost (Start)
         let pegs = { 'A': [], 'B': [], 'C': [] };
         
         let historyStack = []; // For 1-step undo in normal mode
@@ -489,7 +517,7 @@
         }
 
         function getDiskHeight() {
-            return Math.min(32, Math.max(20, Math.floor(260 / numDisks)));
+            return Math.min(32, Math.max(14, Math.floor((stage.clientHeight - 110) / numDisks) - 3));
         }
 
         /* Peg Position Mapping (Left: A, Middle: B, Right: C) */
@@ -518,7 +546,7 @@
             return baseY - (stackIndex + 1) * (diskH + gap);
         }
 
-        /* Standard Hanoi recursive solution (Start Peg C -> Goal Peg A via Aux Peg B) */
+        /* Standard Hanoi recursive solution (Start C -> Goal A via Aux B) */
         function computeStandardHanoiSolution(n, src, dst, aux, moves) {
             if (n === 0) return;
             computeStandardHanoiSolution(n - 1, src, aux, dst, moves);
@@ -536,7 +564,7 @@
             minMoves = Math.pow(2, numDisks) - 1;
 
             solutionMoves = [];
-            // Start: Peg C, Goal: Peg A, Aux: Peg B
+            // Start: C, Goal: A, Aux: B
             computeStandardHanoiSolution(numDisks, 'C', 'A', 'B', solutionMoves);
 
             pegs = {
@@ -556,31 +584,35 @@
             warningModal.classList.add('hidden');
         }
 
+        let savedPuzzle = null;
         function switchPrimaryMode(mode) {
-            if (isAnimating || isAutoPlaying) stopAutoPlay();
+            if (isAnimating || primaryMode === mode) return;
+            stopAutoPlay();
             cancelActiveDrag();
-            primaryMode = mode;
-
-            if (primaryMode === 'normal') {
-                tabNormalMode.className = 'px-5 py-2.5 rounded-xl text-base sm:text-lg font-extrabold transition bg-sky-500 text-white shadow-md flex items-center gap-2 cursor-pointer';
-                tabFreeMode.className = 'px-5 py-2.5 rounded-xl text-base sm:text-lg font-extrabold text-slate-300 hover:text-white transition flex items-center gap-2 cursor-pointer';
-                stepAnalysisPanel.classList.remove('hidden');
-                freeModePanel.classList.add('hidden');
-                movesLabel.textContent = '現在の手数';
-            } else {
-                tabFreeMode.className = 'px-5 py-2.5 rounded-xl text-base sm:text-lg font-extrabold transition bg-amber-500 text-slate-950 shadow-md flex items-center gap-2 cursor-pointer';
-                tabNormalMode.className = 'px-5 py-2.5 rounded-xl text-base sm:text-lg font-extrabold text-slate-300 hover:text-white transition flex items-center gap-2 cursor-pointer';
-                stepAnalysisPanel.classList.add('hidden');
-                freeModePanel.classList.remove('hidden');
-                movesLabel.textContent = '配置移動回数';
+            if (mode === 'free') {
+                savedPuzzle = JSON.parse(JSON.stringify({numDisks,pegs,historyStack,currentMoves,currentStep,activeMode}));
             }
-
+            primaryMode = mode;
+            tabFreeMode.hidden = mode === 'free';
+            tabNormalMode.hidden = mode !== 'free';
+            tabFreeMode.setAttribute('aria-expanded', String(mode === 'free'));
+            document.getElementById('analysisDetails').hidden = mode === 'free';
+            freeModePanel.classList.toggle('hidden', mode !== 'free');
+            movesLabel.textContent = mode === 'free' ? '配置移動回数' : '現在の手数';
+            if (mode === 'normal' && savedPuzzle) diskSelect.value = String(savedPuzzle.numDisks);
             initGame();
+            if (mode === 'normal' && savedPuzzle) {
+                ({pegs,historyStack,currentMoves,currentStep,activeMode}=savedPuzzle);
+                savedPuzzle = null;
+                updateUI(); renderBoard();
+            }
+            (mode === 'free' ? tabNormalMode : tabFreeMode).focus();
         }
 
         function updateUI() {
             currentMovesDisplay.textContent = currentMoves;
             const unlocked = isUnlocked(numDisks);
+            document.getElementById('analysisSummary').textContent = unlocked ? '手順を見る' : '手順を見る（クリア後）';
             const reqClears = (numDisks <= 3) ? 3 : 2;
             const curClears = stats[numDisks] ? stats[numDisks].clearCount : 0;
 
@@ -604,17 +636,7 @@
 
                 stepUnlockConditionText.innerHTML = `<span class="text-emerald-400 font-semibold text-xs flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> 解析機能が解禁されています！</span>`;
             } else {
-                minMovesContainer.innerHTML = `
-                    <div class="flex flex-col items-center">
-                        <span class="text-xs sm:text-sm font-extrabold text-amber-400 bg-amber-950/80 border border-amber-700/60 px-3 py-1 rounded-lg flex items-center gap-1.5 shadow-sm">
-                            <i class="fa-solid fa-lock text-amber-400 text-sm"></i>
-                            <span>クリア ${curClears}/${reqClears}回</span>
-                        </span>
-                        <span class="text-[11px] text-slate-400 mt-1 font-medium text-center">
-                            (最短1回 or 残り<strong class="text-amber-300 font-bold">${Math.max(0, reqClears - curClears)}</strong>回で解放)
-                        </span>
-                    </div>
-                `;
+                minMovesContainer.innerHTML = '<span class="text-sm text-slate-400">クリア後に表示</span>';
 
                 modeAutoBtn.disabled = true;
                 modeAutoLockIcon.className = 'fa-solid fa-lock text-amber-400 text-sm';
@@ -719,7 +741,7 @@
         }
 
         /**
-         * Computes optimal move sequence from arbitrary valid board configuration to Goal Peg A
+         * Computes optimal move sequence from arbitrary valid board configuration to Goal A
          */
         function solveHanoiFromArbitraryState() {
             let currentPeg = {};
@@ -884,7 +906,7 @@
             playIcon.className = 'fa-solid fa-play text-lg';
             playText.textContent = '自動再生';
             freeAutoGoalIcon.className = 'fa-solid fa-play';
-            freeAutoGoalText.textContent = '自動ゴール (Peg A)';
+            freeAutoGoalText.textContent = '自動ゴール';
             updateUI();
         }
 
@@ -912,7 +934,7 @@
 
             const freeMoves = solveHanoiFromArbitraryState();
             if (freeMoves.length === 0) {
-                warningMessage.textContent = 'すでにすべての円盤が Peg A に配置されています。';
+                warningMessage.textContent = 'すでにすべての円盤が A に配置されています。';
                 warningModal.classList.remove('hidden');
                 return;
             }

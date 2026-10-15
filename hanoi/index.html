@@ -159,8 +159,6 @@
 
             <nav class="help-actions" aria-label="操作の補助">
                 <a href="#rules">ルール</a>
-                <button id="tabFreeMode" type="button" aria-controls="freeModePanel" aria-expanded="false">解説</button>
-                <button id="tabNormalMode" type="button" hidden>戻る</button>
             </nav>
         </header>
 
@@ -320,25 +318,6 @@
             </div>
 
             </details>
-            <!-- FREE MODE: Panel (Explanation Mode) -->
-            <div id="freeModePanel" class="bg-amber-950/40 border border-amber-600/60 rounded-xl p-3 sm:p-4 flex flex-col gap-3 hidden">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div class="flex items-center gap-2 text-amber-300 font-extrabold text-sm sm:text-base">
-                        <i class="fa-solid fa-hand-holding-hand text-lg"></i>
-                        解説：自由に配置して手順を確かめられます
-                    </div>
-
-                    <!-- Free Mode Auto Goal Button -->
-                    <button id="freeAutoGoalBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold text-base sm:text-lg shadow-lg flex items-center gap-2 transition active:scale-95 cursor-pointer">
-                        <i id="freeAutoGoalIcon" class="fa-solid fa-play"></i>
-                        <span id="freeAutoGoalText">自動ゴール</span>
-                    </button>
-                </div>
-                <p class="text-xs sm:text-sm text-slate-300 font-medium">
-                    ※円盤を掴むとその上の円盤も一緒に移動できます。また、小の上に大を置く自由な配置が可能です。<br>
-                    ※「自動ゴール」を実行する際は、ルールを守った正しい配置（小の上に大がない状態）にする必要があります。
-                </p>
-            </div>
 
         </div>
 
@@ -402,7 +381,7 @@
 
     <script>
         // State management variables
-        let primaryMode = 'normal'; // 'normal' | 'free'
+        const primaryMode = 'normal';
         let numDisks = 3;
         
         // FIXED PEG LAYOUT:
@@ -460,8 +439,6 @@
         ];
 
         // DOM element references
-        const tabNormalMode = document.getElementById('tabNormalMode');
-        const tabFreeMode = document.getElementById('tabFreeMode');
         const diskSelect = document.getElementById('diskSelect');
         const movesLabel = document.getElementById('movesLabel');
         const currentMovesDisplay = document.getElementById('currentMovesDisplay');
@@ -469,7 +446,6 @@
         const resetBtn = document.getElementById('resetBtn');
         const undoBtn = document.getElementById('undoBtn');
         const stepAnalysisPanel = document.getElementById('stepAnalysisPanel');
-        const freeModePanel = document.getElementById('freeModePanel');
         const modeManualBtn = document.getElementById('modeManualBtn');
         const modeAutoBtn = document.getElementById('modeAutoBtn');
         const modeAutoLockIcon = document.getElementById('modeAutoLockIcon');
@@ -486,9 +462,6 @@
         const nextStepBtn = document.getElementById('nextStepBtn');
         const playIcon = document.getElementById('playIcon');
         const playText = document.getElementById('playText');
-        const freeAutoGoalBtn = document.getElementById('freeAutoGoalBtn');
-        const freeAutoGoalIcon = document.getElementById('freeAutoGoalIcon');
-        const freeAutoGoalText = document.getElementById('freeAutoGoalText');
         const stage = document.getElementById('stage');
         const disksContainer = document.getElementById('disksContainer');
         const dragContainer = document.getElementById('dragContainer');
@@ -582,31 +555,6 @@
             renderBoard();
             winModal.classList.add('hidden');
             warningModal.classList.add('hidden');
-        }
-
-        let savedPuzzle = null;
-        function switchPrimaryMode(mode) {
-            if (isAnimating || primaryMode === mode) return;
-            stopAutoPlay();
-            cancelActiveDrag();
-            if (mode === 'free') {
-                savedPuzzle = JSON.parse(JSON.stringify({numDisks,pegs,historyStack,currentMoves,currentStep,activeMode}));
-            }
-            primaryMode = mode;
-            tabFreeMode.hidden = mode === 'free';
-            tabNormalMode.hidden = mode !== 'free';
-            tabFreeMode.setAttribute('aria-expanded', String(mode === 'free'));
-            document.getElementById('analysisDetails').hidden = mode === 'free';
-            freeModePanel.classList.toggle('hidden', mode !== 'free');
-            movesLabel.textContent = mode === 'free' ? '配置移動回数' : '現在の手数';
-            if (mode === 'normal' && savedPuzzle) diskSelect.value = String(savedPuzzle.numDisks);
-            initGame();
-            if (mode === 'normal' && savedPuzzle) {
-                ({pegs,historyStack,currentMoves,currentStep,activeMode}=savedPuzzle);
-                savedPuzzle = null;
-                updateUI(); renderBoard();
-            }
-            (mode === 'free' ? tabNormalMode : tabFreeMode).focus();
         }
 
         function updateUI() {
@@ -711,7 +659,7 @@
                     diskEl.textContent = diskVal;
 
                     const isTopDisk = (stackIdx === stack.length - 1);
-                    const canGrab = (primaryMode === 'free') || (primaryMode === 'normal' && isTopDisk);
+                    const canGrab = isTopDisk;
 
                     if (canGrab && activeMode === 'manual' && !isAnimating) {
                         diskEl.style.cursor = 'grab';
@@ -728,49 +676,6 @@
         /**
          * Validates whether all pegs strictly obey Hanoi hierarchy
          */
-        function isBoardValidForHanoi() {
-            for (let p of ['A', 'B', 'C']) {
-                let stack = pegs[p];
-                for (let i = 0; i < stack.length - 1; i++) {
-                    if (stack[i] <= stack[i + 1]) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-
-        /**
-         * Computes optimal move sequence from arbitrary valid board configuration to Goal A
-         */
-        function solveHanoiFromArbitraryState() {
-            let currentPeg = {};
-            ['A', 'B', 'C'].forEach(p => {
-                pegs[p].forEach(diskVal => {
-                    currentPeg[diskVal] = p;
-                });
-            });
-
-            let moves = [];
-
-            function solveRecursive(k, targetPeg) {
-                if (k <= 0) return;
-                let curr = currentPeg[k];
-                if (curr === targetPeg) {
-                    solveRecursive(k - 1, targetPeg);
-                } else {
-                    let auxPeg = ['A', 'B', 'C'].find(p => p !== curr && p !== targetPeg);
-                    solveRecursive(k - 1, auxPeg);
-                    moves.push({ diskVal: k, from: curr, to: targetPeg });
-                    currentPeg[k] = targetPeg;
-                    solveRecursive(k - 1, targetPeg);
-                }
-            }
-
-            solveRecursive(numDisks, 'A');
-            return moves;
-        }
-
         function getStageDuration() {
             const speed = parseInt(speedSelect.value, 10);
             if (speed >= 1200) return 200;
@@ -905,8 +810,6 @@
             isAutoPlaying = false;
             playIcon.className = 'fa-solid fa-play text-lg';
             playText.textContent = '自動再生';
-            freeAutoGoalIcon.className = 'fa-solid fa-play';
-            freeAutoGoalText.textContent = '自動ゴール';
             updateUI();
         }
 
@@ -916,52 +819,6 @@
                 stopAutoPlay();
             } else {
                 startAutoPlay();
-            }
-        }
-
-        /* Free Mode Auto Goal Execution */
-        async function runFreeAutoGoal() {
-            if (isAutoPlaying) {
-                stopAutoPlay();
-                return;
-            }
-
-            if (!isBoardValidForHanoi()) {
-                warningMessage.textContent = 'ルールを無視した配置（小の上に大）があるため、自動ゴールできません。';
-                warningModal.classList.remove('hidden');
-                return;
-            }
-
-            const freeMoves = solveHanoiFromArbitraryState();
-            if (freeMoves.length === 0) {
-                warningMessage.textContent = 'すでにすべての円盤が A に配置されています。';
-                warningModal.classList.remove('hidden');
-                return;
-            }
-
-            isAutoPlaying = true;
-            freeAutoGoalIcon.className = 'fa-solid fa-pause';
-            freeAutoGoalText.textContent = '停止';
-
-            for (let i = 0; i < freeMoves.length && isAutoPlaying; i++) {
-                const move = freeMoves[i];
-                const fromStackIdx = pegs[move.from].length - 1;
-                const toStackIdx = pegs[move.to].length;
-
-                await animate3StagePass(move.diskVal, move.from, move.to, fromStackIdx, toStackIdx);
-
-                pegs[move.from].pop();
-                pegs[move.to].push(move.diskVal);
-                currentMoves++;
-                currentMovesDisplay.textContent = currentMoves;
-                renderBoard();
-
-                await sleep(100);
-            }
-
-            stopAutoPlay();
-            if (pegs['A'].length === numDisks) {
-                checkWin();
             }
         }
 
@@ -990,12 +847,8 @@
             const stackIdx = parseInt(diskEl.dataset.stackIdx, 10);
             const stack = pegs[sourcePeg];
 
-            if (primaryMode === 'free') {
-                draggedBlock = stack.slice(stackIdx);
-            } else {
-                if (stackIdx !== stack.length - 1) return;
-                draggedBlock = [stack[stackIdx]];
-            }
+            if (stackIdx !== stack.length - 1) return;
+            draggedBlock = [stack[stackIdx]];
 
             if (draggedBlock.length === 0) return;
 
@@ -1082,14 +935,8 @@
             const baseDiskVal = draggedBlock[0];
             const targetStack = pegs[targetPeg];
 
-            let isLegal = false;
-
-            if (primaryMode === 'free') {
-                isLegal = (targetPeg !== sourcePeg);
-            } else {
-                isLegal = (targetPeg !== sourcePeg) && 
-                          (targetStack.length === 0 || targetStack[targetStack.length - 1] > baseDiskVal);
-            }
+            const isLegal = (targetPeg !== sourcePeg) &&
+                (targetStack.length === 0 || targetStack[targetStack.length - 1] > baseDiskVal);
 
             if (isLegal) {
                 if (primaryMode === 'normal') {
@@ -1169,8 +1016,6 @@
         }
 
         // Event listener bindings
-        tabNormalMode.addEventListener('click', () => switchPrimaryMode('normal'));
-        tabFreeMode.addEventListener('click', () => switchPrimaryMode('free'));
 
         diskSelect.addEventListener('change', () => {
             // Stats strictly retained during disk changes across page session
@@ -1223,7 +1068,6 @@
         });
 
         playPauseBtn.addEventListener('click', toggleAutoPlay);
-        freeAutoGoalBtn.addEventListener('click', runFreeAutoGoal);
 
         winResetBtn.addEventListener('click', () => {
             winModal.classList.add('hidden');

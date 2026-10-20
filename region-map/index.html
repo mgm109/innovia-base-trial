@@ -1,1 +1,50 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>未来に残したい地域マップ｜INNOVIA Base</title><link rel="icon" href="../favicon.svg"><link rel="stylesheet" href="../assets/site.css"><link rel="stylesheet" href="../assets/catalog-navigation.css"></head><body><nav class="catalog-navigation" aria-label="教材一覧"><a class="catalog-brand" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">INNOVIA Base <span>✳</span></a><a class="catalog-return" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">教材一覧へ戻る</a></nav><main class="shell"><div class="inner"><span class="eyebrow">地域探究</span><h1>未来に残したい地域マップ</h1><p class="lead">身近な地域の魅力や課題を、データから見つけよう。</p><section class="panel regional-map-plan" aria-labelledby="regional-map-title"><div class="plan-heading"><span class="eyebrow">イノベーター情報 · 地域探究</span><h2 id="regional-map-title">未来に残したい地域マップ</h2><p class="small-note">地域の場所・カテゴリ・理由・評価・コメント・写真を集め、地図化とデータ分析を通して、地域の未来を考える授業案です。</p></div><div class="plan-grid"><div><h3>授業のねらい</h3><p>身近な地域をデータで捉え、位置情報・データサイエンス・生成AIを活用して、地域の魅力や課題を発見する。</p></div><div><h3>生徒が投稿する情報</h3><p>場所、カテゴリ、思い出・魅力、評価、理由、コメント、写真。自宅や友人宅など個人が特定される場所は登録しない。</p></div></div><div class="plan-block"><h3>授業の6段階</h3><ol class="plan-steps"><li><strong>① 地域を見る</strong><span>未来に残したい地域のよさや、気になる場所を考える。</span></li><li><strong>② データを集める</strong><span>生徒が地域の場所・カテゴリ・理由・評価などを投稿する。</span></li><li><strong>③ 地図化する</strong><span>投稿を地図上に表示し、クラス全体の地域データを可視化する。</span></li><li><strong>④ 傾向を分析する</strong><span>投稿の集中地点、カテゴリ、評価、コメントの傾向を調べる。</span></li><li><strong>⑤ AIと考察する</strong><span>AIによるコメント要約や魅力・課題の抽出と、生徒の分析を比較し妥当性を検討する。</span></li><li><strong>⑥ 未来を提案する</strong><span>分析結果を根拠に、地域に残したい価値や改善案を発表する。</span></li></ol></div><div class="plan-grid"><div><h3>実施形態</h3><p>単独校では地区別・カテゴリ別・現在の魅力と未来要望を比較。2校合同ではA地域とB地域の魅力地点、カテゴリ、公共交通などを比較する。</p></div><div><h3>成果物と学び</h3><p>地域マップ、集計・分析、AI要約の検証、地域への未来提案、発表・振り返り。問題解決、データ活用、情報倫理、生成AI活用を結び付ける。</p></div></div></section><p class="small-note">このページは授業案です。場所の投稿・写真の送信・地図上への表示は、まだ実装していません。</p></div></main></body></html>
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>未来に残したい地域マップ 動作確認版｜INNOVIA Base</title>
+  <link rel="stylesheet" href="../assets/site.css" id="base-style">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="vendor/leaflet/leaflet.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <main class="check-shell">
+    <nav class="check-nav" aria-label="先生用画面"><a href="../teacher/" class="brand">INNOVIA Base <span>✳</span></a><a href="../teacher/" class="teacher-link">先生用へ戻る</a></nav>
+    <header class="check-intro">
+      <span class="eyebrow">先生用 · 動作確認</span>
+      <h1>未来に残したい地域マップ <small>動作確認版</small></h1>
+      <p class="lead">学校のChromebook／iPadで、地図を動かして確かめます。</p>
+      <p class="small-note">地図を1回タップ／クリックするとピンが立ちます。ピンをもう一度押すと説明が開きます。別の場所を押すとピンが移動します。</p>
+    </header>
+    <section aria-label="地図の動作確認">
+      <p id="tile-status" class="tile-status" role="status" aria-live="polite">地図の準備中…</p>
+      <div id="map" aria-label="確認用の地図（初期表示：札幌・大通公園周辺）"></div>
+      <noscript><p>JavaScriptが無効なため、地図を表示できません。端末の設定を確認してください。</p></noscript>
+    </section>
+    <section class="check-panel" aria-labelledby="check-heading">
+      <h2 id="check-heading">Chromebook/iPad 動作確認チェック</h2>
+      <p class="small-note">実際に操作できた項目にチェックしてください。結果は保存・送信されません。</p>
+      <div class="check-list">
+        <label><input type="checkbox"> <span>① 地図が表示される</span></label>
+        <label><input type="checkbox"> <span>② 拡大縮小できる <small>＋／−ボタン・ピンチ操作</small></span></label>
+        <label><input type="checkbox"> <span>③ 移動できる <small>ドラッグ・指で動かす</small></span></label>
+        <label><input type="checkbox"> <span>④ タップでピンが立つ</span></label>
+        <label><input type="checkbox"> <span>⑤ ピンの説明が開く</span></label>
+      </div>
+      <p id="check-progress" role="status" aria-live="polite">0 / 5 項目を確認</p>
+    </section>
+    <details class="check-details"><summary>地図が表示されないとき・通信について</summary>
+      <p>地図画像の通信先は <code>tile.openstreetmap.org</code> です。学校ネットワークの制限や回線の状態を確認してください。チェックは地図が実際に見えてから付けてください。</p>
+      <p>Leaflet 1.9.4は教材内に同梱しています。地図画像はOpenStreetMapから取得するため、インターネット接続が必要です。</p>
+      <p>氏名・写真・投稿の入力、現在地の取得、GASやスプレッドシートへの保存はありません。選択したピンとチェック結果は再読み込みすると消えます。</p>
+      <p>地図の表示時には、OpenStreetMap側へIPアドレス等の通常の通信情報と、表示する地図範囲に応じた画像リクエストが届きます。</p>
+      <p><a href="https://operations.osmfoundation.org/policies/tiles/" target="_blank" rel="noopener">OpenStreetMap タイル利用方針</a> · <a href="https://osmfoundation.org/wiki/Privacy_Policy" target="_blank" rel="noopener">プライバシーポリシー</a></p>
+    </details>
+  </main>
+</body>
+</html>

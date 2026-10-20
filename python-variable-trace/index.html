@@ -98,6 +98,40 @@
 .execution-output pre{flex:1;min-width:0;margin:0;padding:0 14px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;font:16px/1.7 ui-monospace,Consolas,monospace;min-height:1.7em}
 
 .output-content{flex:1;min-width:0;padding-right:14px}.execution-output .output-content pre{padding:0}.output-content pre:empty{display:none}.graph-figure{margin:8px 0 0;max-width:680px;background:white;border:1px solid #d9e9e6;border-radius:9px;overflow:hidden}.graph-figure svg{display:block;width:100%;height:auto;font-family:system-ui,sans-serif}.graph-figure figcaption{padding:6px 12px;color:#476a70;font-size:13px}.graph-figure + .graph-figure{margin-top:14px}
+
+/* 初学者向けの入力候補と、行を示すエラー案内 */
+.source-editor{position:relative;margin-top:12px;border-radius:9px;background:#fbfdff}
+.source-editor #source{display:block;position:relative;z-index:1;margin:0;background:transparent;color:transparent;-webkit-text-fill-color:transparent;caret-color:#173544;font:16px/1.7 ui-monospace,Consolas,monospace;white-space:pre;tab-size:4;min-height:190px;overflow:auto}
+.source-editor #source::selection{background:#8abaf580}
+.source-highlight{position:absolute;inset:0;margin:0;padding:14px;border:1px solid transparent;border-radius:9px;overflow:hidden;pointer-events:none;font:16px/1.7 ui-monospace,Consolas,monospace;white-space:pre;tab-size:4;color:#203c56}
+#sourceHighlightCode{display:block;white-space:pre;font:inherit;transform-origin:top left}
+.syntax-line{display:block;min-height:1.7em;width:max-content;min-width:100%}
+.syntax-keyword{color:#7134a3;font-weight:700}.syntax-command{color:#07599c;font-weight:700}.syntax-string{color:#147344}.syntax-number{color:#994615}.syntax-comment{color:#667984}
+.syntax-error-line{background:#ffe5df;box-shadow:inset 4px 0 #b82921}
+.line.source-error{background:#ffe5df;border-left:4px solid #b82921}.line.source-error .num{color:#a21b17;font-weight:800;width:41px}.line.source-error .src{font-weight:700}
+.editor-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:9px;font-size:12px;color:#476a70}.editor-tools button{padding:6px 10px;color:#07599c;font-weight:700}.syntax-legend{display:flex;gap:6px 14px;flex-wrap:wrap;margin:9px 0 0;font-size:12px}
+.completion-panel{border:1px solid #aac9dc;border-radius:10px;background:#fff;margin-top:8px;overflow:hidden;max-width:100%}.completion-heading{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px;padding:8px 12px;background:#eaf3fc;font-size:12px;color:#365970}
+.completion-option{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;width:100%;border:0;border-bottom:1px solid #e4edf3;border-radius:0;text-align:left;padding:9px 12px;background:#fff;min-width:0}.completion-option strong{font-family:ui-monospace,Consolas,monospace;color:#07599c;overflow-wrap:anywhere}.completion-option[aria-selected=true]{background:#e1efff;box-shadow:inset 4px 0 #2563b6}.completion-kind{background:#e8f3ef;color:#1e6046;border-radius:5px;padding:1px 6px;font-size:11px}.completion-detail{font-size:12px;color:#526d7c}
+.status.error{background:#fff0ed;color:#98261c}.editor-error{border:1px solid #e4aaa2;border-left:5px solid #b82921;border-radius:10px;background:#fff4ef;padding:12px 14px;margin-top:10px;color:#65241b;overflow-wrap:anywhere}.error-title{display:block;font-size:16px;color:#98261c}.editor-error p{margin:8px 0;font-size:14px}.error-focus{display:inline-block;color:#98261c;background:#ffe0bf;padding:2px 8px;border-radius:4px;font-size:17px}.editor-error pre{margin:8px 0;padding:9px;background:#fff;border:1px solid #ead0c9;border-radius:6px;font:14px/1.6 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}.editor-error button{font-weight:700;color:#98261c;background:#fff;border-color:#d7aaa4;font-size:13px}
+@media(max-width:600px){.completion-option{padding:9px}.completion-detail{flex-basis:100%}.editor-error{padding:11px}.editor-tools{align-items:flex-start}}
+
+/* 編集・実行を一つのコード欄にまとめ、通常時の情報を絞る */
+.work-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}.work-heading h2{margin:0;font-size:16px}.work-heading button{padding:5px 10px;font-size:12px;color:#476a70;background:#fff}
+.visually-hidden,#msg{position:absolute!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}
+.workspace .source-editor{margin:0;border-radius:9px;background:#fbfdff}.workspace .source-editor #source{border:0;border-radius:9px;padding:14px 14px 14px 52px;min-height:170px;height:220px;margin:0}.workspace .source-highlight{border:0;padding:14px 14px 14px 52px}
+.source-gutter{position:absolute;left:0;top:0;bottom:0;width:40px;z-index:2;overflow:hidden;pointer-events:none;background:#f1f6f8;border-right:1px solid #e0e9ed;padding-top:14px;font:16px/1.7 ui-monospace,Consolas,monospace;color:#71828c}
+.gutter-line{display:block;height:1.7em;padding-right:9px;text-align:right;box-sizing:border-box}.syntax-next-line{background:#fff1c4}.syntax-executed-line{background:#e0f2e8}.gutter-line.syntax-next-line,.gutter-line.syntax-executed-line{font-weight:700;color:#234953}
+#codeView{display:none!important}.workspace .completion-panel{position:absolute;top:0;left:0;width:max-content;z-index:4;margin:0;max-width:calc(100% - 16px);box-shadow:0 3px 10px #17354420;background:#fff}.workspace .completion-heading{display:none}.workspace #completionList{display:flex;flex-direction:column}.workspace .completion-option{padding:6px 10px;gap:0;font-size:13px}.workspace .completion-detail,.workspace .completion-kind{display:none}.workspace .completion-option strong{font-size:13px}
+.workspace .editor-error{margin:0;border-radius:0;border-width:1px 0 0 4px;padding:10px 12px}.workspace .editor-error pre{display:none}.workspace .editor-error p{margin:5px 0}.workspace .error-title{font-size:14px}.workspace .error-focus{font-size:15px;padding:0 6px}.workspace .editor-error button{margin-top:5px;padding:5px 9px}
+.workspace .trace-side-by-side{display:block;margin-top:13px}.workspace .current-vars{display:none!important}.workspace .trace-side-by-side .tracepanel{padding:0;border:0}.workspace .trace-side-by-side .tracepanel .history{border:1px solid #d8e9e5;border-radius:9px;max-height:290px;overflow:auto}.workspace .trace-heading h2{font-size:15px}.workspace .trace-legend{font-size:11px}
+#graphHelp{display:none!important}.workspace .stepbar{margin-top:12px}.workspace #position{font-size:12px;color:#60778a;min-height:0}
+.workspace{overflow-anchor:none}.run-toolbar{position:sticky;top:0;z-index:10;background:#fff;padding:8px 0 6px;margin-bottom:8px;border-bottom:1px solid #e1ebe8}.workspace .run-toolbar .stepbar{margin:0 0 4px}.workspace .run-toolbar #position{min-height:18px;line-height:18px;margin:0}.run-toolbar:focus-within{outline-offset:2px}
+main>.app-intro{padding:6px 0 10px}main>.app-intro .app-category{font-size:12px;margin-bottom:3px}main>.app-intro h1{font-size:clamp(21px,3vw,26px)}.workspace .run-toolbar{padding-top:2px}
+.work-grid{min-width:0}.work-grid>.code-output,.work-grid>.trace-side-by-side{min-width:0}
+.work-grid>.code-pane{min-width:0}.workspace .pane-title,.workspace .trace-heading h2{font-size:15px;line-height:22px;font-weight:700;margin:0}.workspace .code-pane>.pane-title{margin-bottom:9px}.workspace .trace-heading{margin:0 0 9px}.workspace .source-editor #source{resize:none}
+.workspace .trace-side-by-side .tracepanel .history{max-height:none;overflow:visible}.workspace .trace-side-by-side .tracepanel .history table{table-layout:fixed;width:100%}.workspace .trace-side-by-side .tracepanel .history th,.workspace .trace-side-by-side .tracepanel .history td{padding:5px 10px;line-height:1.5;overflow-wrap:anywhere}.workspace .trace-side-by-side .tracepanel .history th:first-child,.workspace .trace-side-by-side .tracepanel .history th:last-child,.workspace .trace-side-by-side .tracepanel .history td:last-child{width:auto}
+@media(min-width:760px){main{max-width:1200px}.work-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}.workspace .work-grid>.trace-side-by-side{margin-top:0}}
+@media(max-width:600px){.workspace .stepbar{gap:6px}.workspace .stepbar button{padding:8px 6px;font-size:13px}.workspace .completion-option strong{font-size:12px}}
 </style>
 <link rel="icon" href="../favicon.svg">
 <link rel="stylesheet" href="../assets/catalog-navigation.css">
@@ -139,9 +173,8 @@
   <input type="file" id="fileInput" accept=".py,text/x-python,text/plain" style="display:none" aria-label="Pythonファイルを選択">
 
 </div>
-<details class="panel editor"><summary><span class="editor-heading">① Pythonプログラムを表示・編集する</span><span class="editor-hint">Tabキーでスペース4個を入力できます。</span></summary><textarea id="source" spellcheck="false" aria-label="Pythonコード入力欄"></textarea><div class="buttons build-controls"><button class="primary" id="build">コードをセット</button><div id="msg" class="status" role="status">例題を選んで実行してみましょう。</div></div></details>
-<section class="panel execution"><h2>② 1行ずつ実行</h2><div class="code-output"><div class="codeView" id="codeView" aria-label="行番号付きコード"></div><div id="executionOutput" class="execution-output hidden" role="status" aria-label="実行結果" aria-live="polite" aria-atomic="true"><span class="output-marker" aria-hidden="true">•••</span><div class="output-content"><pre id="outputText"></pre><div id="graphOutput"></div></div></div></div><div class="stepbar"><button id="prev">◀ 1つ戻る</button><button class="primary" id="next">次の1ステップ ▶</button><button id="all">最後まで</button><button id="reset">最初から</button></div><div id="position" class="muted"></div><p id="graphHelp" class="muted hidden">グラフは plt.show() の行で表示されます。折れ線・棒グラフとタイトル・軸ラベルに対応しています。</p><div class="trace-side-by-side"><div class="current-vars"><strong>現在の変数</strong><div class="variable-table"><table><thead id="varsHead"></thead><tbody id="vars"></tbody></table></div><p id="emptyVars" class="muted">まだ変数はありません。</p></div>
-<section class="tracepanel"><div class="sectionhead trace-heading"><h2>③ トレース表</h2><span class="trace-legend"><strong class="legend-green">緑色</strong>：変化した値、<strong class="legend-blue">青色</strong>：現在のステップ</span></div><div class="history" id="historyScroll"><table><thead id="traceHead"></thead><tbody id="history"></tbody></table></div></section></div>
+<section class="panel execution editor workspace"><button type="button" id="showCompletions" hidden aria-label="入力候補を表示">入力候補</button><div class="run-toolbar"><div class="stepbar"><button id="prev">◀ 戻る</button><button class="primary" id="next">▶ 1行実行</button><button id="all">最後まで</button><button id="reset">最初から</button></div><div id="position" class="muted"></div></div><span id="editorGuide" class="visually-hidden">Enterで改行。入力候補はTabまたはクリックで入力できます。</span><div id="msg" role="status" class="visually-hidden"></div><div class="work-grid"><div class="code-pane"><h2 class="pane-title">コード</h2><div class="code-output"><div class="source-editor"><div id="sourceGutter" class="source-gutter" aria-hidden="true"><div id="sourceGutterLines"></div></div><pre id="sourceHighlight" class="source-highlight" aria-hidden="true"><code id="sourceHighlightCode"></code></pre><textarea id="source" spellcheck="false" wrap="off" autocomplete="off" autocapitalize="off" aria-label="Pythonコード入力欄" aria-describedby="editorGuide"></textarea><div id="completionPanel" class="completion-panel" hidden><div class="completion-heading"><strong>入力候補</strong><span>このアプリで使える書き方</span></div><div id="completionList" role="listbox" aria-label="Pythonの入力候補"></div></div></div><div id="editorError" class="editor-error" role="alert" hidden></div><div class="codeView" id="codeView" hidden></div><div id="executionOutput" class="execution-output hidden" role="status" aria-label="実行結果" aria-live="polite" aria-atomic="true"><span class="output-marker" aria-hidden="true">•••</span><div class="output-content"><pre id="outputText"></pre><div id="graphOutput"></div></div></div></div></div><p id="graphHelp" class="muted hidden">グラフは plt.show() の行で表示されます。折れ線・棒グラフとタイトル・軸ラベルに対応しています。</p><div class="trace-side-by-side"><div class="current-vars"><strong>現在の変数</strong><div class="variable-table"><table><thead id="varsHead"></thead><tbody id="vars"></tbody></table></div><p id="emptyVars" class="muted">まだ変数はありません。</p></div>
+<section class="tracepanel"><div class="sectionhead trace-heading"><h2>変数のトレース</h2></div><div class="history" id="historyScroll"><table><thead id="traceHead"></thead><tbody id="history"></tbody></table></div></section></div></div>
 </section>
 
 </main>
@@ -323,21 +356,160 @@ function renderGraphs(graphs) {
  $('graphOutput').replaceChildren(...graphs.map(graphFigure));
 }
 
-function revealCodeLine() {
- const view=$('codeView'),line=view.querySelector('.line.active')||view.querySelector('.line.done');
- if(!line)return;const area=view.getBoundingClientRect(),row=line.getBoundingClientRect();
- if(row.bottom>area.bottom)view.scrollTop+=row.bottom-area.bottom+7;
- else if(row.top<area.top)view.scrollTop-=area.top-row.top+7;
+function revealCodeLine(){
+ const input=$('source'),target=steps[index+1]||steps[index];if(!target||!target.line)return;
+ const lineHeight=parseFloat(getComputedStyle(input).lineHeight),top=(target.line-1)*lineHeight+14,bottom=top+lineHeight;
+ if(bottom>input.scrollTop+input.clientHeight)input.scrollTop=bottom-input.clientHeight+14;else if(top<input.scrollTop)input.scrollTop=Math.max(0,top-14);syncEditorHighlight();
+}
+
+let editorIssue=null,completionItems=[],completionIndex=0,completionRange=null,editorComposing=false,completionDismissed=false;
+const editorCommands=[
+ {label:'print()',insert:'print()',back:1,kind:'命令',detail:'値や文字を表示'},
+ {label:'range()',insert:'range()',back:1,kind:'命令',detail:'for の繰り返す範囲'},
+ {label:'if 条件:',insert:'if ',kind:'条件',detail:'条件によって処理を分ける'},
+ {label:'else:',insert:'else:',kind:'条件',detail:'条件に当てはまらないとき'},
+ {label:'for i in range():',insert:'for i in range():',back:2,kind:'繰り返し',detail:'指定した範囲で繰り返す'},
+ {label:'while 条件:',insert:'while ',kind:'繰り返し',detail:'条件を満たす間、繰り返す'},
+ {label:'import matplotlib.pyplot as plt',insert:'import matplotlib.pyplot as plt',kind:'グラフ',detail:'グラフの準備'},
+ ...['True','False','None','and','or','not'].map(label=>({label,insert:label,kind:'キーワード',detail:'Pythonの書き方'}))
+];
+const plotCommands=[['plot','折れ線グラフ','x, y'],['bar','棒グラフ','x, y'],['title','タイトル','""'],['xlabel','横軸の名前','""'],['ylabel','縦軸の名前','""'],['show','グラフを表示','']].map(([name,detail,args])=>({label:'plt.'+name+'('+args+')',insert:'plt.'+name+'()',back:1,kind:'グラフ',detail}));
+function syntaxLine(text){
+ const re=/(#[^\n]*|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\b(?:import|as|if|elif|else|for|in|while|and|or|not|True|False|None)\b|\b(?:print|range|plt|plot|bar|title|xlabel|ylabel|show)\b|\b\d+(?:\.\d*)?\b)/g;
+ let out='',end=0;for(const m of text.matchAll(re)){out+=escapeHTML(text.slice(end,m.index));const t=m[0],kind=t[0]==='#'?'comment':/^['"]/.test(t)?'string':/^\d/.test(t)?'number':/^(import|as|if|elif|else|for|in|while|and|or|not|True|False|None)$/.test(t)?'keyword':'command';out+='<span class="syntax-'+kind+'">'+escapeHTML(t)+'</span>';end=m.index+t.length;}return out+escapeHTML(text.slice(end));
+}
+function syncEditorHighlight(){
+ const source=$('source'),current=steps[index],next=steps[index+1],rows=source.value.split('\n');
+ const style=getComputedStyle(source),lineHeight=parseFloat(style.lineHeight),naturalHeight=Math.ceil(rows.length*lineHeight+parseFloat(style.paddingTop)+parseFloat(style.paddingBottom)+2),height=Math.max(170,Math.min(naturalHeight,Math.max(320,window.innerHeight*.72)));if(source.style.height!==height+'px')source.style.height=height+'px';
+ const state=i=>editorIssue&&editorIssue.line===i+1?' syntax-error-line':next&&next.line===i+1?' syntax-next-line':current&&current.line===i+1?' syntax-executed-line':'';
+ $('sourceHighlightCode').innerHTML=rows.map((line,i)=>'<span class="syntax-line'+state(i)+'">'+(syntaxLine(line)||' ')+'</span>').join('');
+ $('sourceHighlightCode').style.transform='translate('+(-source.scrollLeft)+'px, '+(-source.scrollTop)+'px)';
+ $('sourceGutterLines').innerHTML=rows.map((_,i)=>'<span class="gutter-line'+state(i)+'">'+(i+1)+'</span>').join('');$('sourceGutterLines').style.transform='translateY('+(-source.scrollTop)+'px)';positionCompletions();
+}
+function hideCompletions(){completionItems=[];completionRange=null;$('completionPanel').hidden=true;$('source').setAttribute('aria-expanded','false');$('source').removeAttribute('aria-activedescendant');}
+function lexicalPosition(text){let quote='',comment=false;for(let i=0;i<text.length;i++){const c=text[i];if(c==='\n'){comment=false;quote='';continue;}if(comment)continue;if(quote){if(c==='\\'){i++;continue;}if(c===quote)quote='';continue;}if(c==='#')comment=true;else if(c==='"'||c==="'")quote=c;}return{quote,comment};}
+function updateCompletions(explicit=false){
+ const input=$('source');if(editorComposing||input.selectionStart!==input.selectionEnd||(!explicit&&completionDismissed)){hideCompletions();return;}
+ const cursor=input.selectionStart,prefix=input.value.slice(0,cursor),lex=lexicalPosition(prefix);if(lex.quote||lex.comment){hideCompletions();return;}
+ const match=prefix.match(/(?:plt\.[A-Za-z_]*|[A-Za-z_]\w*)$/);if(!match&&!explicit){hideCompletions();return;}const token=match?match[0]:'',start=cursor-token.length;
+ if(start>0&&/[\w.]/.test(prefix[start-1])){hideCompletions();return;}
+ const vars=Array.from(new Set(input.value.split('\n').flatMap(line=>{const m=line.match(/^\s*([A-Za-z_]\w*)\s*=(?!=)/)||line.match(/^\s*for\s+([A-Za-z_]\w*)\s+in\b/);return m?[m[1]]:[];}))).map(label=>({label,insert:label,kind:'変数',detail:'コードで使っている変数名'}));
+ const pool=token.startsWith('plt.')?plotCommands:[...vars,...editorCommands,...plotCommands];
+ completionItems=pool.filter(item=>item.insert.startsWith(token)&&item.insert!==token).slice(0,3);if(!completionItems.length){hideCompletions();return;}
+ let end=cursor;while(/[A-Za-z0-9_]/.test(input.value[end]||''))end++;completionRange={start,end};completionIndex=0;renderCompletions();
+}
+function renderCompletions(){
+ const list=$('completionList');list.replaceChildren(...completionItems.map((item,i)=>{const option=document.createElement('button');option.type='button';option.id='completion-'+i;option.className='completion-option';option.setAttribute('role','option');option.setAttribute('aria-selected',String(i===completionIndex));const label=document.createElement('strong');label.textContent=item.label;const kind=document.createElement('span');kind.className='completion-kind';kind.textContent=item.kind;const detail=document.createElement('span');detail.className='completion-detail';detail.textContent=item.detail;option.append(label,kind,detail);option.addEventListener('pointerdown',event=>{event.preventDefault();acceptCompletion(i);});option.addEventListener('click',()=>acceptCompletion(i));return option;}));$('completionPanel').hidden=false;$('source').setAttribute('aria-expanded','true');$('source').setAttribute('aria-activedescendant','completion-'+completionIndex);positionCompletions();
+}
+function positionCompletions(){
+ const panel=$('completionPanel');if(panel.hidden)return;
+ const input=$('source'),prefix=input.value.slice(0,input.selectionStart),rows=prefix.split('\n'),line=$('sourceHighlightCode').children[rows.length-1];if(!line)return;
+ let remaining=rows.at(-1).length,node,walker=document.createTreeWalker(line,NodeFilter.SHOW_TEXT);while((node=walker.nextNode())){if(remaining<=node.textContent.length)break;remaining-=node.textContent.length;}
+ if(!node)return;const range=document.createRange();range.setStart(node,remaining);range.collapse(true);const caret=range.getBoundingClientRect(),area=input.closest('.source-editor').getBoundingClientRect();
+ const style=getComputedStyle(input),lineHeight=parseFloat(style.lineHeight),caretTop=caret.height?caret.top:line.getBoundingClientRect().top;
+ if(caretTop+lineHeight<=area.top||caretTop>=area.bottom||caret.left<area.left||caret.left>area.right){hideCompletions();return;}
+ panel.style.left='0px';panel.style.top='0px';panel.style.right='auto';panel.style.bottom='auto';panel.style.maxWidth=Math.max(1,area.width-16)+'px';
+ const box=panel.getBoundingClientRect(),desiredLeft=caret.right-area.left+2;let top=caretTop-area.top+lineHeight+3;
+ if(top+box.height>area.height-8)top=caretTop-area.top-box.height-3;
+ const left=Math.max(8,Math.min(desiredLeft,area.width-box.width-8));top=Math.max(8,Math.min(top,area.height-box.height-8));
+ panel.style.left=left+'px';panel.style.top=top+'px';
+}
+function acceptCompletion(i=completionIndex){
+ const item=completionItems[i],range=completionRange;if(!item||!range)return;const input=$('source');let insertion=item.insert,back=item.back||0;
+ if(insertion.endsWith('()')&&input.value[range.end]==='('){insertion=insertion.slice(0,-2);back=0;}
+ input.setRangeText(insertion,range.start,range.end,'end');const cursor=input.selectionStart-back;input.setSelectionRange(cursor,cursor);completionDismissed=true;hideCompletions();onEditorInput(false);input.focus();
+}
+function clearEditorIssue(){editorIssue=null;$('editorError').hidden=true;$('source').removeAttribute('aria-invalid');syncEditorHighlight();}
+function preflightCode(source){
+ const rows=source.replace(/\r/g,'').split('\n'),stack=[];
+ for(let i=0;i<rows.length;i++){let quote='';const row=rows[i];for(let j=0;j<row.length;j++){const c=row[j];if(quote){if(c==='\\'){j++;continue;}if(c===quote)quote='';continue;}if(c==='#')break;if(c==='"'||c==="'"){quote=c;continue;}if('(['.includes(c))stack.push({char:c,line:i+1});else if(')]'.includes(c)){const open=stack.pop();if(!open||(open.char==='('?')':']')!==c)throw Object.assign(Error('対応する開き括弧がありません: '+c),{line:i+1,help:'括弧の開き方と閉じ方を確認しましょう。',symbol:c});}}
+  if(quote)throw Object.assign(Error('文字列を閉じる引用符がありません'),{line:i+1,help:'文字を囲む引用符は、最初と最後を同じ記号にします。',symbol:quote});
+  const clean=row.trim();if(/^(if\s|elif\s|else\s*$|while\s|for\s)/.test(clean)&&!clean.endsWith(':')&&!clean.includes('#'))throw Object.assign(Error('行の最後の : がありません'),{line:i+1,help:'条件分岐や繰り返しの見出しの最後を確認しましょう。',symbol:':'});
+ }
+ if(stack.length){const open=stack.at(-1),symbol=open.char==='('?')':']';throw Object.assign(Error('閉じ括弧 '+symbol+' がありません'),{line:open.line,help:'開いた括弧と、対応する閉じ括弧を確認しましょう。',symbol});}
+}
+function issueDetails(error){
+ const explicit=error.line||Number((error.message.match(/^(\d+)行目:/)||[])[1]),line=explicit||null,sourceLine=line?$('source').value.split('\n')[line-1]||'':'';
+ let raw=error.message.replace(/^\d+行目:\s*/,''),help=error.help||'表示された行と、その前後の書き方を確認しましょう。',symbol=error.symbol||'',focus='',example='';
+ if(/未定義の変数:/.test(raw)){const name=raw.split('未定義の変数: ')[1];raw='変数「'+name+'」の値がまだ決まっていません。';help='使う前に値を代入したか、名前のつづりを確認してください。大文字・小文字も区別されます。';focus=name;}
+ else if(/ブロックが空/.test(raw)){raw='この行の下に、実行する処理を書いてください。';help='下の行の先頭をスペース4個分下げて書きます。';focus='次の行・スペース4個';}
+ else if(/インデント/.test(raw)){raw='行の先頭の空白を確認してください。';help='条件や繰り返しの中では、先頭をスペース4個分下げます。Tabキーでも入力できます。';focus='スペース4個';}
+ else if(/0で割る/.test(raw)){raw='割る数が 0 になっています。';help='割り算の右側の値や、その変数への代入を確認してください。';focus='割る数';}
+ else if(/対応していない文/.test(raw)){raw='このアプリでは、この書き方を実行できません。';const call=sourceLine.trim().match(/^([A-Za-z_]\w*)\s*\(/);if(call&&/^pr(?:i?n?t?)?$/.test(call[1])){help='画面に表示する命令のつづりを確認しましょう。';focus='print';example='print(値)';}else{help='入力候補や例題と見比べてください。';}}
+ else if(/plt\.|グラフ|リスト|x と y|y には|折れ線/.test(raw))help='グラフの例題と見比べ、リストの個数・値・命令の順番を確認しましょう。';
+ return{line,raw,help,symbol,focus,example,sourceLine};
+}
+function showEditorIssue(error){
+ hideCompletions();editorIssue=issueDetails(error);const panel=$('editorError');panel.replaceChildren();
+ const title=document.createElement('strong');title.className='error-title';title.textContent='⚠ '+(editorIssue.line?editorIssue.line+'行目：':'コードを確認：')+editorIssue.raw;panel.append(title);
+ const guidance=document.createElement('p');guidance.textContent=editorIssue.help;panel.append(guidance);
+ if(editorIssue.symbol||editorIssue.focus){const point=document.createElement('p');point.append(document.createTextNode('確認するところ：'));const strong=document.createElement('strong');strong.className='error-focus';strong.textContent=editorIssue.symbol||editorIssue.focus;point.append(strong);panel.append(point);}
+ if(editorIssue.sourceLine){const row=document.createElement('pre');row.textContent=editorIssue.sourceLine;row.setAttribute('aria-label','確認する行のコード');panel.append(row);}
+ if(editorIssue.example){const example=document.createElement('p');example.append(document.createTextNode('書き方のヒント：'));const code=document.createElement('code');code.textContent=editorIssue.example;example.append(code);panel.append(example);}
+ if(editorIssue.line){const button=document.createElement('button');button.type='button';button.textContent='↗ '+editorIssue.line+'行目を確認する';button.onclick=focusIssueLine;panel.append(button);}
+ panel.hidden=false;$('source').setAttribute('aria-invalid','true');$('source').focus();syncEditorHighlight();
+}
+function focusIssueLine(){
+ if(!editorIssue||!editorIssue.line)return;hideCompletions();const input=$('source'),lineNumber=editorIssue.line,rows=input.value.split('\n'),start=rows.slice(0,lineNumber-1).reduce((n,row)=>n+row.length+1,0);
+ input.focus({preventScroll:true});input.setSelectionRange(start,start+(rows[lineNumber-1]||'').length);
+ function reveal(){
+  const style=getComputedStyle(input),lineHeight=parseFloat(style.lineHeight),lineTop=parseFloat(style.paddingTop)+(lineNumber-1)*lineHeight;
+  input.scrollTop=Math.max(0,lineTop-(input.clientHeight-lineHeight)/2);input.scrollLeft=0;syncEditorHighlight();
+  const line=$('sourceHighlightCode').children[lineNumber-1];if(!line)return;const rect=line.getBoundingClientRect(),viewport=window.visualViewport,viewportTop=viewport?viewport.offsetTop:0,viewportHeight=viewport?viewport.height:window.innerHeight;
+  const toolbar=document.querySelector('.run-toolbar'),safeTop=viewportTop+(toolbar?toolbar.getBoundingClientRect().height:0)+16,safeBottom=viewportTop+viewportHeight-16;
+  if(rect.top<safeTop||rect.bottom>safeBottom){const target=safeTop+Math.max(0,(safeBottom-safeTop-rect.height)/2);window.scrollBy({top:rect.top-target,behavior:'instant'});}
+ }
+ reveal();requestAnimationFrame(reveal);
+}
+function onEditorInput(suggest=true){
+ clearEditorIssue();steps=[];index=0;lines=$('source').value.replace(/\r/g,'').split('\n');lastSource='';render();message('編集中');if(suggest)updateCompletions();
+}
+function setupEditorAssist(){
+ const input=$('source');input.setAttribute('aria-controls','completionList');input.setAttribute('aria-expanded','false');input.setAttribute('aria-autocomplete','list');
+ input.addEventListener('scroll',syncEditorHighlight);
+ input.addEventListener('input',()=>{completionDismissed=false;onEditorInput(!editorComposing);});
+ input.addEventListener('compositionstart',()=>{editorComposing=true;hideCompletions();});
+ input.addEventListener('compositionend',()=>{editorComposing=false;completionDismissed=false;syncEditorHighlight();});
+ input.addEventListener('click',()=>{completionDismissed=false;updateCompletions();});
+ document.addEventListener('click',event=>{if(!event.target.closest('.completion-panel,.source-editor,#showCompletions'))hideCompletions();});
+ input.addEventListener('keydown',event=>{
+  if(editorComposing||event.isComposing||event.keyCode===229)return;
+  if(event.ctrlKey&&event.code==='Space'){event.preventDefault();completionDismissed=false;updateCompletions(true);return;}
+  if(completionItems.length){if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();completionIndex=(completionIndex+(event.key==='ArrowDown'?1:-1)+completionItems.length)%completionItems.length;renderCompletions();return;}if(event.key==='Tab'){event.preventDefault();acceptCompletion();return;}if(event.key==='Escape'){event.preventDefault();completionDismissed=true;hideCompletions();return;}}
+  if(event.key==='Tab'){event.preventDefault();const start=input.selectionStart;input.setRangeText('    ',start,input.selectionEnd,'end');onEditorInput(false);return;}
+  if(event.key==='Enter'){event.preventDefault();completionDismissed=true;hideCompletions();const start=input.selectionStart,before=input.value.slice(0,start),row=before.slice(before.lastIndexOf('\n')+1),indent=(row.match(/^ */)||[''])[0];input.setRangeText('\n'+indent+(row.trimEnd().endsWith(':')?'    ':''),start,input.selectionEnd,'end');onEditorInput(false);return;}
+  if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){hideCompletions();completionDismissed=true;}
+ });
+ $('showCompletions').onclick=()=>{input.focus();completionDismissed=false;updateCompletions(true);};window.addEventListener('resize',()=>{syncEditorHighlight();positionCompletions();});new ResizeObserver(positionCompletions).observe(input);syncEditorHighlight();
+}
+
+function fitTraceColumns(){
+ const table=$('historyScroll').querySelector('table'),available=$('historyScroll').clientWidth;if(!available)return;
+ const names=Array.from(new Set(steps.flatMap(step=>Object.keys(step.vars)))).sort();
+ const canvas=fitTraceColumns.canvas||(fitTraceColumns.canvas=document.createElement('canvas')),ctx=canvas.getContext('2d'),style=getComputedStyle(table);
+ ctx.font='700 '+style.fontSize+' '+style.fontFamily;const measure=text=>ctx.measureText(String(text)).width;
+ const stepWidth=Math.ceil(Math.max(measure('ステップ'),measure(Math.max(1,steps.length-1)))+24);
+ // 全ステップの値を測り、実行中に列の幅が変わらないようにする。
+ const wanted=names.map(name=>Math.max(64,Math.min(168,Math.ceil(Math.max(measure(name),...steps.map(step=>Object.hasOwn(step.vars,name)?measure(format(step.vars[name])):measure('—')))+32))));
+ const contentMinimum=Math.min(240,Math.max(80,available*.4)),reserve=Math.min(contentMinimum,Math.max(80,available-stepWidth-56*names.length)),budget=Math.max(0,available-stepWidth-reserve),total=wanted.reduce((sum,w)=>sum+w,0);
+ let widths=wanted;
+ if(total>budget&&names.length){const minimum=Math.min(56,budget/names.length),extra=Math.max(0,budget-minimum*names.length),weights=wanted.map(width=>Math.max(1,width-minimum)),sum=weights.reduce((a,b)=>a+b,0);widths=weights.map(weight=>minimum+extra*weight/sum);}
+ const contentWidth=Math.max(1,available-stepWidth-widths.reduce((a,b)=>a+b,0));
+ let group=table.querySelector('colgroup');if(!group){group=document.createElement('colgroup');table.prepend(group);}
+ group.replaceChildren(...[stepWidth,...widths,contentWidth].map(width=>{const column=document.createElement('col');column.style.width=width+'px';return column;}));
+}
+function observeTraceWidth(){
+ new ResizeObserver(fitTraceColumns).observe($('historyScroll'));
 }
 
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function message(m,type=''){ $('msg').className='status '+type;$('msg').textContent=m}
 function fileFeedback(m,type='error'){$('fileFeedback').className='file-feedback '+type;$('fileFeedback').textContent=m}
 function clearFileFeedback(){$('fileFeedback').className='file-feedback hidden';$('fileFeedback').textContent=''}
-function compile(){try{let result=buildSteps($('source').value);steps=result.trace;lines=result.raw;index=0;lastSource=$('source').value;message('解析完了。'+(steps.length-1)+'ステップで実行できます。','success');render()}catch(e){steps=[];lines=$('source').value.split('\n');index=0;message(e.message,'error');render()}}
-function render(){let s=steps[index]||{vars:{},changed:[],output:[],line:0,text:'開始前'};let next=steps[index+1];$('codeView').innerHTML=lines.map((line,i)=>`<div class="line ${s.line===i+1?'done':''} ${next&&next.line===i+1?'active':''}"><span class="num">${i+1}</span><span class="src">${escapeHTML(line)||' '}</span></div>`).join('');revealCodeLine();$('outputText').textContent=s.output.join('\n');renderGraphs(s.graphs||[]);$('executionOutput').classList.toggle('hidden',s.output.length===0&&!(s.graphs||[]).length);$('graphHelp').classList.toggle('hidden',!lines.some(line=>line.trim()==='import matplotlib.pyplot as plt'));let names=Object.keys(s.vars).sort();$('varsHead').innerHTML='<tr>'+names.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'</tr>';$('vars').innerHTML='<tr>'+names.map(k=>'<td class="'+(s.changed.includes(k)?'changedCell':'')+'">'+escapeHTML(format(s.vars[k]))+'</td>').join('')+'</tr>';$('emptyVars').classList.toggle('hidden',names.length>0);let traceNames=Array.from(new Set(steps.flatMap(st=>Object.keys(st.vars)))).sort();$('traceHead').innerHTML='<tr><th>ステップ</th>'+traceNames.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'<th>実行内容</th></tr>';$('history').innerHTML=steps.slice(1,index+1).map((t,i)=>'<tr class="'+(i+1===index?'current':'')+'"><td>'+(i+1)+'</td>'+traceNames.map(k=>'<td class="'+(t.changed.includes(k)?'changedCell':'')+'">'+(Object.prototype.hasOwnProperty.call(t.vars,k)?escapeHTML(format(t.vars[k])):'—')+'</td>').join('')+'<td>'+escapeHTML(t.text)+'</td></tr>').join('');$('prev').disabled=index===0;$('next').disabled=!next;$('all').disabled=!next;$('position').textContent='ステップ '+index+' / '+Math.max(0,steps.length-1)+(next?' · 次に実行する行：'+next.line+'行目':' · 実行終了');}
-function step(){if(index<steps.length-1){index++;render()}}
-$('build').addEventListener('click',compile);$('reset').addEventListener('click',compile);$('prev').addEventListener('click',()=>{if(index>0){index--;render()}});$('next').addEventListener('click',step);$('all').addEventListener('click',()=>{index=steps.length-1;render()});$('sample').addEventListener('change',()=>{if(!$('sample').value)return;$('source').value=samples[$('sample').value];currentFileName=$('sample').selectedOptions[0].textContent;updateOpenedName();$('sample').value='';compile()});$('newCode').addEventListener('click',()=>{hideSaveChoices();clearFileFeedback();if($('source').value.trim()&&!confirm('新規作成しますか？ 現在のコードとトレース履歴は消去されます。'))return;currentFileName='';$('source').value='';updateOpenedName();$('openedName').focus();$('sample').selectedIndex=-1;steps=[];index=0;lines=[];lastSource='';$('source').closest('details').open=true;render();message('プログラム名を入力してから、Pythonコードを作成してください。');});function exportRows(){
+function compile(){hideCompletions();clearEditorIssue();try{preflightCode($('source').value);let result=buildSteps($('source').value);steps=result.trace;lines=result.raw;index=0;lastSource=$('source').value;message('✓ 解析完了。'+(steps.length-1)+'ステップで実行できます。','success');render()}catch(e){steps=[];lines=$('source').value.replace(/\r/g,'').split('\n');index=0;lastSource='';showEditorIssue(e);message('⚠ '+(editorIssue.line?editorIssue.line+'行目を確認してください。':'コードを確認してください。')+'コード欄の下にヒントを表示しています。','error');render()}}
+function render(){syncEditorHighlight();let s=steps[index]||{vars:{},changed:[],output:[],line:0,text:'開始前'};let next=steps[index+1];$('codeView').innerHTML=lines.map((line,i)=>`<div class="line ${s.line===i+1?'done':''} ${next&&next.line===i+1?'active':''} ${editorIssue&&editorIssue.line===i+1?'source-error':''}"><span class="num">${i+1}</span><span class="src">${syntaxLine(line)||' '}</span></div>`).join('');revealCodeLine();$('outputText').textContent=s.output.join('\n');renderGraphs(s.graphs||[]);$('executionOutput').classList.toggle('hidden',s.output.length===0&&!(s.graphs||[]).length);$('graphHelp').classList.toggle('hidden',!lines.some(line=>line.trim()==='import matplotlib.pyplot as plt'));let names=Object.keys(s.vars).sort();$('varsHead').innerHTML='<tr>'+names.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'</tr>';$('vars').innerHTML='<tr>'+names.map(k=>'<td class="'+(s.changed.includes(k)?'changedCell':'')+'">'+escapeHTML(format(s.vars[k]))+'</td>').join('')+'</tr>';$('emptyVars').classList.toggle('hidden',names.length>0);let traceNames=Array.from(new Set(steps.flatMap(st=>Object.keys(st.vars)))).sort();$('traceHead').innerHTML='<tr><th>ステップ</th>'+traceNames.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'<th>実行内容</th></tr>';$('history').innerHTML=steps.slice(1,index+1).map((t,i)=>'<tr class="'+(i+1===index?'current':'')+'"><td>'+(i+1)+'</td>'+traceNames.map(k=>'<td class="'+(t.changed.includes(k)?'changedCell':'')+'">'+(Object.prototype.hasOwnProperty.call(t.vars,k)?escapeHTML(format(t.vars[k])):'—')+'</td>').join('')+'<td>'+escapeHTML(t.text)+'</td></tr>').join('');fitTraceColumns();$('prev').disabled=index===0;const canCompile=!editorIssue&&$('source').value.trim()&&$('source').value!==lastSource;$('next').disabled=!next&&!canCompile;$('all').disabled=!next&&!canCompile;$('position').textContent=editorIssue?'コードを確認してください':!steps.length?'':index+' / '+Math.max(0,steps.length-1)+' ステップ'+(next?'':' · 終了');}
+function step(){if($('source').value!==lastSource)compile();if(index<steps.length-1){index++;render()}}
+$('reset').addEventListener('click',compile);$('prev').addEventListener('click',()=>{if(index>0){index--;render()}});$('next').addEventListener('click',step);$('all').addEventListener('click',()=>{if($('source').value!==lastSource)compile();if(steps.length){index=steps.length-1;render()}});$('sample').addEventListener('change',()=>{if(!$('sample').value)return;$('source').value=samples[$('sample').value];currentFileName=$('sample').selectedOptions[0].textContent;updateOpenedName();$('sample').value='';compile()});$('newCode').addEventListener('click',()=>{hideSaveChoices();hideCompletions();clearEditorIssue();clearFileFeedback();if($('source').value.trim()&&!confirm('新規作成しますか？ 現在のコードとトレース履歴は消去されます。'))return;currentFileName='';$('source').value='';updateOpenedName();$('openedName').focus();$('sample').selectedIndex=-1;steps=[];index=0;lines=[];lastSource='';$('source').focus();render();message('プログラム名を入力してから、Pythonコードを作成してください。');});function exportRows(){
  let names=Array.from(new Set(steps.flatMap(s=>Object.keys(s.vars)))).sort();
  let rows=[['ステップ',...names,'実行内容']];
  steps.slice(1,index+1).forEach((s,i)=>rows.push([String(i+1),...names.map(k=>k in s.vars?format(s.vars[k]):''),s.text]));
@@ -489,14 +661,14 @@ $('fileInput').addEventListener('change',async(e)=>{
   $('source').value=code.replace(/^\uFEFF/,'');
   currentFileName=file.name.replace(/\.py$/i,'');updateOpenedName();
   $('sample').selectedIndex=-1;
-  $('source').closest('details').open=true;
+  $('source').focus();
   compile();
   fileFeedback('読み込みました。','success');
  }catch(err){fileFeedback('読み込めませんでした: '+err.message,'error')}
 });
 
 updateOpenedName();
-$('source').addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();let a=e.target,p=a.selectionStart;a.setRangeText('    ',p,a.selectionEnd,'end')}});$('source').value=samples.basic;compile();
+setupEditorAssist();observeTraceWidth();$('source').value=samples.basic;compile();
 })();
 </script>
 </body></html>

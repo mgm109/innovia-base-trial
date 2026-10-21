@@ -140,16 +140,16 @@ main>.app-intro{padding:6px 0 10px}main>.app-intro .app-category{font-size:12px;
 .app-intro{padding:12px 0 18px}.app-intro .app-category{margin:0 0 7px;color:#476a70;font-size:13px;font-weight:700}.app-intro h1{margin:0;font-size:clamp(22px,4vw,28px);line-height:1.4;color:#173544}
 @media print{.catalog-navigation{display:none!important}}
 </style>
-</head>
-<body>
-<nav class="catalog-navigation" aria-label="教材一覧"><a class="catalog-brand" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">INNOVIA Base <span>✳</span></a><a class="catalog-return" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">教材一覧へ戻る</a></nav>
+<link rel="stylesheet" data-innovia-ui="shared" href="../assets/ui-common.css?v=20261022"><script src="../assets/ui-common.js?v=20261022"></script></head>
+<body class="innovia-ui innovia-trace">
+<nav class="catalog-navigation innovia-header" aria-label="教材一覧"><a class="catalog-brand" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">INNOVIA Base <span>✳</span></a><a class="catalog-return innovia-button innovia-return" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">教材一覧へ戻る</a></nav>
 <main>
 <section class="app-intro" aria-labelledby="app-title"><p class="app-category">プログラミング</p><h1 id="app-title">Python変数トレース</h1></section>
 <div class="file-toolbar" aria-label="ファイル操作">
   <div class="file-actions">
-    <button type="button" id="newCode" class="primary">＋ 新規</button>
-    <button type="button" id="savePy">保存</button>
-    <button type="button" id="openPy">開く</button>
+    <button type="button" id="newCode" class="primary innovia-button innovia-primary">＋ 新規</button>
+    <button class="innovia-button" type="button" id="savePy">保存</button>
+    <button class="innovia-button" type="button" id="openPy">開く</button>
     <input id="openedName" class="opened-name" type="text" value="基本：代入と計算" placeholder="プログラム名を入力" aria-label="プログラム名（編集できます）" autocomplete="off">
     <select id="sample" class="sample-dropdown" aria-label="例題を使う">
       <option value="" selected>例題を使う ▾</option>
@@ -165,16 +165,16 @@ main>.app-intro{padding:6px 0 10px}main>.app-intro .app-category{font-size:12px;
   <div id="saveChoices" class="save-choices hidden" aria-label="保存形式を選択">
     <strong>保存する形式を選んでください</strong>
     <div class="save-choice-buttons">
-      <button type="button" id="choosePy">Pythonファイル（.py）</button>
-      <button type="button" id="choosePdf">PDF</button>
-      <button type="button" id="cancelSave">キャンセル</button>
+      <button class="innovia-button" type="button" id="choosePy">Pythonファイル（.py）</button>
+      <button class="innovia-button" type="button" id="choosePdf">PDF</button>
+      <button class="innovia-button" type="button" id="cancelSave">キャンセル</button>
     </div>
   </div>
   <div id="fileFeedback" class="file-feedback hidden" role="status" aria-live="polite"></div>
   <input type="file" id="fileInput" accept=".py,text/x-python,text/plain" style="display:none" aria-label="Pythonファイルを選択">
 
 </div>
-<section class="panel execution editor workspace"><button type="button" id="showCompletions" hidden aria-label="入力候補を表示">入力候補</button><div class="run-toolbar"><div class="stepbar"><button id="prev">◀ 戻る</button><button class="primary" id="next">▶ 1行実行</button><button id="all">最後まで</button><button id="reset">最初から</button></div><div id="position" class="muted"></div></div><span id="editorGuide" class="visually-hidden">Enterで改行。入力候補はTabまたはクリックで入力できます。</span><div id="msg" role="status" class="visually-hidden"></div><div class="work-grid"><div class="code-pane"><h2 class="pane-title">コード</h2><div class="code-output"><div class="source-editor"><div id="sourceGutter" class="source-gutter" aria-hidden="true"><div id="sourceGutterLines"></div></div><pre id="sourceHighlight" class="source-highlight" aria-hidden="true"><code id="sourceHighlightCode"></code></pre><textarea id="source" spellcheck="false" wrap="off" autocomplete="off" autocapitalize="off" aria-label="Pythonコード入力欄" aria-describedby="editorGuide"></textarea><div id="completionPanel" class="completion-panel" hidden><div class="completion-heading"><strong>入力候補</strong><span>このアプリで使える書き方</span></div><div id="completionList" role="listbox" aria-label="Pythonの入力候補"></div></div></div><div id="editorError" class="editor-error" role="alert" hidden></div><div class="codeView" id="codeView" hidden></div><div id="executionOutput" class="execution-output hidden" role="status" aria-label="実行結果" aria-live="polite" aria-atomic="true"><span class="output-marker" aria-hidden="true">•••</span><div class="output-content"><pre id="outputText"></pre><div id="graphOutput"></div></div></div></div></div><p id="graphHelp" class="muted hidden">グラフは plt.show() の行で表示されます。折れ線・棒グラフとタイトル・軸ラベルに対応しています。</p><div class="trace-side-by-side"><div class="current-vars"><strong>現在の変数</strong><div class="variable-table"><table><thead id="varsHead"></thead><tbody id="vars"></tbody></table></div><p id="emptyVars" class="muted">まだ変数はありません。</p></div>
+<section class="panel execution editor workspace"><button class="innovia-button" type="button" id="showCompletions" hidden aria-label="入力候補を表示">入力候補</button><div class="run-toolbar"><div class="stepbar"><button class="innovia-button" id="prev">◀ 戻る</button><button class="primary innovia-button innovia-primary" id="next">▶ 1行実行</button><button class="innovia-button" id="all">最後まで</button><button class="innovia-button" id="reset">最初から</button></div><div id="position" class="muted"></div></div><span id="editorGuide" class="visually-hidden">Enterで改行。入力候補はTabまたはクリックで入力できます。</span><div id="msg" role="status" class="visually-hidden"></div><div class="work-grid"><div class="code-pane"><h2 class="pane-title">コード</h2><div class="code-output"><div class="source-editor"><div id="sourceGutter" class="source-gutter" aria-hidden="true"><div id="sourceGutterLines"></div></div><pre id="sourceHighlight" class="source-highlight" aria-hidden="true"><code id="sourceHighlightCode"></code></pre><textarea id="source" spellcheck="false" wrap="off" autocomplete="off" autocapitalize="off" aria-label="Pythonコード入力欄" aria-describedby="editorGuide"></textarea><div id="completionPanel" class="completion-panel" hidden><div class="completion-heading"><strong>入力候補</strong><span>このアプリで使える書き方</span></div><div id="completionList" role="listbox" aria-label="Pythonの入力候補"></div></div></div><div id="editorError" class="editor-error" role="alert" hidden></div><div class="codeView" id="codeView" hidden></div><div id="executionOutput" class="execution-output hidden" role="status" aria-label="実行結果" aria-live="polite" aria-atomic="true"><span class="output-marker" aria-hidden="true">•••</span><div class="output-content"><pre id="outputText"></pre><div id="graphOutput"></div></div></div></div></div><p id="graphHelp" class="muted hidden">グラフは plt.show() の行で表示されます。折れ線・棒グラフとタイトル・軸ラベルに対応しています。</p><div class="trace-side-by-side"><div class="current-vars"><strong>現在の変数</strong><div class="variable-table"><table><thead id="varsHead"></thead><tbody id="vars"></tbody></table></div><p id="emptyVars" class="muted">まだ変数はありません。</p></div>
 <section class="tracepanel"><div class="sectionhead trace-heading"><h2>変数のトレース</h2></div><div class="history" id="historyScroll"><table><thead id="traceHead"></thead><tbody id="history"></tbody></table></div></section></div></div>
 </section>
 
@@ -674,3 +674,4 @@ setupEditorAssist();observeTraceWidth();$('source').value=samples.basic;compile(
 })();
 </script>
 </body></html>
+

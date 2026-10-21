@@ -146,9 +146,9 @@
     </style>
 <link rel="icon" href="../favicon.svg">
 <link rel="stylesheet" href="../assets/catalog-navigation.css">
-</head>
-<body class="min-h-screen flex flex-col items-center justify-start overflow-x-hidden">
-<nav class="catalog-navigation" aria-label="教材一覧"><a class="catalog-brand" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">INNOVIA Base <span>✳</span></a><a class="catalog-return" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">教材一覧へ戻る</a></nav>
+<link rel="stylesheet" data-innovia-ui="shared" href="../assets/ui-common.css?v=20261022"><script src="../assets/ui-common.js?v=20261022"></script></head>
+<body class="min-h-screen flex flex-col items-center justify-start overflow-x-hidden innovia-ui ">
+<nav class="catalog-navigation innovia-header" aria-label="教材一覧"><a class="catalog-brand" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">INNOVIA Base <span>✳</span></a><a class="catalog-return innovia-button innovia-return" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">教材一覧へ戻る</a></nav>
 
     <div class="w-full max-w-5xl p-2 sm:p-4 flex flex-col items-center">
         
@@ -160,7 +160,7 @@
             </h1>
 
             <nav class="help-actions" aria-label="操作の補助">
-                <a href="#rules">ルール</a>
+                <a class="innovia-button" href="#rules">ルール</a>
             </nav>
         </header>
 
@@ -258,11 +258,11 @@
 
                 <!-- Action Buttons: Reset & Undo -->
                 <div class="md:col-span-4 flex flex-row gap-2 h-full">
-                    <button id="resetBtn" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold text-base sm:text-lg rounded-xl py-3 px-3 shadow-lg flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer">
+                    <button id="resetBtn" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold text-base sm:text-lg rounded-xl py-3 px-3 shadow-lg flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer innovia-button">
                         <i class="fa-solid fa-rotate-left"></i>
                         リセット
                     </button>
-                    <button id="undoBtn" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold text-base sm:text-lg rounded-xl py-3 px-3 shadow-lg flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer">
+                    <button id="undoBtn" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold text-base sm:text-lg rounded-xl py-3 px-3 shadow-lg flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer innovia-button">
                         <i class="fa-solid fa-reply"></i>
                         1手戻す
                     </button>
@@ -288,7 +288,7 @@
     <div id="winModal" role="dialog" aria-modal="true" aria-labelledby="winTitle" class="fixed inset-0 glass-modal flex items-center justify-center p-4 hidden z-50">
         <div class="bg-slate-800 border-2 border-emerald-500 rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl">
             <h2 id="winTitle" class="text-2xl sm:text-3xl font-black text-white mb-6">クリアしました！</h2>
-            <button id="winCloseBtn" type="button" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-lg rounded-xl py-3 cursor-pointer">OK</button>
+            <button id="winCloseBtn" type="button" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-lg rounded-xl py-3 cursor-pointer innovia-button innovia-primary">OK</button>
         </div>
     </div>
 
@@ -302,7 +302,7 @@
             <p id="warningMessage" class="text-slate-300 text-sm sm:text-base mb-6 leading-relaxed bg-slate-900/80 border border-slate-700 rounded-xl p-4 text-left">
                 ルールを無視した配置（小の上に大）があるため、自動ゴールできません。
             </p>
-            <button id="closeWarningBtn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-base sm:text-lg rounded-xl py-3 shadow-lg transition active:scale-95 cursor-pointer">
+            <button id="closeWarningBtn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-base sm:text-lg rounded-xl py-3 shadow-lg transition active:scale-95 cursor-pointer innovia-button innovia-primary">
                 理解しました (配置を修正する)
             </button>
         </div>
@@ -697,3 +697,4 @@
     </script>
 </body>
 </html>
+

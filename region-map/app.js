@@ -1,5 +1,11 @@
 (() => {
   'use strict';
+  // The teacher preview already provides its own return button.
+  const teacherNavigation = document.querySelector('.check-nav');
+  if (window.self !== window.top && teacherNavigation) {
+    teacherNavigation.hidden = true;
+    teacherNavigation.style.display = 'none';
+  }
   const status = document.getElementById('tile-status');
   const checks = [...document.querySelectorAll('.check-list input')];
   checks.forEach(check => {

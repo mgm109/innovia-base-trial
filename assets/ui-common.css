@@ -37,3 +37,6 @@ body.signed-in-view>main>header.innovia-header{display:none!important}
 .innovia-trace .run-toolbar #position{color:var(--innovia-muted)}
 .innovia-trace .run-toolbar,.innovia-trace .stepbar{background:var(--innovia-panel)!important;border-color:var(--innovia-line)!important}
 @media(max-width:600px){.innovia-trace .stepbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.innovia-trace .stepbar .innovia-button{white-space:nowrap}}
+
+/* Visibility must win over shared flex/button styles. */
+.innovia-ui [hidden],.innovia-ui.innovia-ui [hidden]{display:none!important}

@@ -40,3 +40,5 @@ body.signed-in-view>main>header.innovia-header{display:none!important}
 
 /* Visibility must win over shared flex/button styles. */
 .innovia-ui [hidden],.innovia-ui.innovia-ui [hidden]{display:none!important}
+
+.innovia-button[aria-pressed="true"]:hover:not(:disabled){background:#dbf697!important;color:var(--innovia-ink)!important;border-color:var(--innovia-accent)!important}

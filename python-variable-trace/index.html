@@ -158,6 +158,9 @@ main>.app-intro{padding:6px 0 10px}main>.app-intro .app-category{font-size:12px;
 <style>
 .trace-target-panel{margin:0 0 10px;padding:12px;border:1px solid #b8d9d2;border-radius:9px;background:#f5fbf9;color:#173544}
 .trace-target-panel[hidden]{display:none}.trace-target-panel label{font-size:13px;font-weight:700}.trace-target-entry{display:flex;gap:7px;margin-top:6px}.trace-target-entry input{flex:1;min-width:0;width:100%;padding:8px 10px;border:1px solid #acc3c9;border-radius:7px;background:#fff;color:#173544;font:14px ui-monospace,Consolas,monospace}.trace-target-panel p{margin:7px 0;font-size:12px;line-height:1.5}.trace-target-list{display:flex;gap:7px;flex-wrap:wrap;margin:9px 0}.trace-target-chip{display:inline-flex;align-items:center;max-width:100%;border:1px solid #a4cbc3;border-radius:7px;background:#fff;color:#174d4c;padding:2px 3px 2px 9px;gap:4px}.trace-target-chip code{overflow-wrap:anywhere;font:13px ui-monospace,Consolas,monospace}.trace-target-chip button{flex:none;border:0;background:transparent;color:#174d4c;padding:3px 8px;min-width:30px;min-height:30px;font-size:19px;line-height:1}.trace-target-chip button:hover{background:#e3f3ef}.trace-target-panel #resetTraceTargets{font-size:12px;padding:6px 9px;background:#fff;color:#174d4c}.trace-target-feedback{color:#186239}.trace-target-feedback.trace-target-error{color:#962c22}#toggleTraceTargets{margin-left:auto;white-space:nowrap}
+</style><style>
+dialog.trace-target-panel{width:min(620px,calc(100vw - 32px));max-width:none;max-height:80vh;overflow:auto;position:fixed;inset:0;margin:auto;padding:16px;box-shadow:0 12px 44px #0005}
+dialog.trace-target-panel::backdrop{background:#061c2b99}.trace-target-dialog-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.trace-target-dialog-heading h2{margin:0;font-size:17px;color:#173544}.trace-target-dialog-heading button{flex:none;background:#fff;color:#174d4c;font-size:13px;padding:7px 12px}.trace-target-chip .trace-target-move{font-size:16px;min-width:30px;min-height:32px;padding:4px 6px}.trace-target-chip button:disabled{opacity:.3;cursor:default}.trace-target-chip button:disabled:hover{background:transparent}.trace-target-panel button:focus-visible{outline:2px solid #1763b6;outline-offset:1px}
 </style></head>
 <body class="innovia-ui innovia-trace">
 <nav class="catalog-navigation innovia-header" aria-label="教材一覧"><a class="catalog-brand" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">INNOVIA Base <span>✳</span></a><a class="catalog-return innovia-button innovia-return" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">教材一覧へ戻る</a></nav>
@@ -193,16 +196,16 @@ main>.app-intro{padding:6px 0 10px}main>.app-intro .app-category{font-size:12px;
 
 </div>
 <section class="panel execution editor workspace"><button class="innovia-button" type="button" id="showCompletions" hidden aria-label="入力候補を表示">入力候補</button><div class="run-toolbar"><div class="stepbar"><button class="innovia-button" id="prev">◀ 戻る</button><button class="primary innovia-button innovia-primary" id="next">▶ 1行実行</button><button class="innovia-button" id="all">最後まで</button><button class="innovia-button" id="reset">最初から</button></div><div id="position" class="muted"></div></div><span id="editorGuide" class="visually-hidden">Enterで改行。入力候補はTabまたはクリックで入力できます。</span><div id="msg" role="status" class="visually-hidden"></div><div class="work-grid"><div class="code-pane"><h2 class="pane-title">コード</h2><div class="code-output"><div class="source-editor"><div id="sourceGutter" class="source-gutter" aria-hidden="true"><div id="sourceGutterLines"></div></div><pre id="sourceHighlight" class="source-highlight" aria-hidden="true"><code id="sourceHighlightCode"></code></pre><textarea id="source" spellcheck="false" wrap="off" autocomplete="off" autocapitalize="off" aria-label="Pythonコード入力欄" aria-describedby="editorGuide"></textarea><div id="completionPanel" class="completion-panel" hidden><div class="completion-heading"><strong>入力候補</strong><span>このアプリで使える書き方</span></div><div id="completionList" role="listbox" aria-label="Pythonの入力候補"></div></div></div><div id="editorError" class="editor-error" role="alert" hidden></div><div class="codeView" id="codeView" hidden></div><div id="executionOutput" class="execution-output hidden" role="status" aria-label="実行結果" aria-live="polite" aria-atomic="true"><span class="output-marker">実行結果</span><div class="output-content"><pre id="outputText"></pre><div id="graphOutput"></div></div></div></div></div><p id="graphHelp" class="muted hidden">グラフは plt.show() の行で表示されます。折れ線・棒グラフとタイトル・軸ラベルに対応しています。</p><div class="trace-side-by-side"><div class="current-vars"><strong>現在の変数</strong><div class="variable-table"><table><thead id="varsHead"></thead><tbody id="vars"></tbody></table></div><p id="emptyVars" class="muted">まだ変数はありません。</p></div>
-<section class="tracepanel"><div class="sectionhead trace-heading"><h2>変数のトレース</h2><button type="button" id="toggleTraceTargets" aria-expanded="false" aria-controls="traceTargetPanel">変数を追加・削除</button></div>
-<div id="traceTargetPanel" class="trace-target-panel" hidden>
+<section class="tracepanel"><div class="sectionhead trace-heading"><h2>変数のトレース</h2><button type="button" id="toggleTraceTargets" aria-expanded="false" aria-controls="traceTargetPanel">変数の表示設定</button></div>
+<dialog id="traceTargetPanel" class="trace-target-panel" aria-labelledby="traceTargetTitle"><div class="trace-target-dialog-heading"><h2 id="traceTargetTitle">トレースする変数の設定</h2><button type="button" id="closeTraceTargets" aria-label="変数の設定を閉じる">閉じる</button></div>
  <label for="traceTargetInput">トレースする変数・式</label>
  <div class="trace-target-entry"><input id="traceTargetInput" type="text" maxlength="120" placeholder="例：i、Data[j]、Data[j + 1]" autocomplete="off" spellcheck="false" aria-describedby="traceTargetHelp"><button type="button" id="addTraceTarget">追加</button></div>
- <p id="traceTargetHelp">×で表示から外せます。値がまだ決まらない式は「—」で表示します。</p>
+ <p id="traceTargetHelp">← →で列の順番を変更、×で表示から外せます。値がまだ決まらない式は「—」で表示します。</p>
  <div id="traceTargetList" class="trace-target-list" aria-label="表示する変数と式"></div>
  <p id="traceTargetEmpty">表示する変数がありません。追加欄から指定するか、コードを実行してください。</p>
  <button type="button" id="resetTraceTargets">すべての変数を自動表示</button>
  <p id="traceTargetFeedback" class="trace-target-feedback" role="status" aria-live="polite" hidden></p>
-</div><div class="history" id="historyScroll"><table><thead id="traceHead"></thead><tbody id="history"></tbody></table></div></section></div></div>
+</dialog><div class="history" id="historyScroll"><table><thead id="traceHead"></thead><tbody id="history"></tbody></table></div></section></div></div>
 </section>
 
 </main>
@@ -554,6 +557,7 @@ function setupEditorAssist(){
 }
 
 let extraTraceTargets=[];
+let traceTargetOrder=[];
 const hiddenTraceTargets=new Set();
 function traceTargetKey(target){return tokenize(target).join(' ');}
 function traceColumnNames(){
@@ -561,7 +565,15 @@ function traceColumnNames(){
  const selected=automatic.filter(name=>!hiddenTraceTargets.has(traceTargetKey(name)));
  const keys=new Set(selected.map(traceTargetKey));
  for(const target of extraTraceTargets){const key=traceTargetKey(target);if(!keys.has(key)){selected.push(target);keys.add(key);}}
- return selected;
+ const ranks=new Map(traceTargetOrder.map((key,i)=>[key,i]));
+ return selected.map((target,i)=>({target,rank:ranks.has(traceTargetKey(target))?ranks.get(traceTargetKey(target)):traceTargetOrder.length+i})).sort((a,b)=>a.rank-b.rank).map(item=>item.target);
+}
+function moveTraceTarget(target,direction){
+ if(direction!==-1&&direction!==1)return false;
+ const targets=traceColumnNames(),key=traceTargetKey(target),position=targets.findIndex(name=>traceTargetKey(name)===key),next=position+direction;
+ if(position<0||next<0||next>=targets.length)return false;
+ [targets[position],targets[next]]=[targets[next],targets[position]];
+ traceTargetOrder=targets.map(traceTargetKey);return true;
 }
 function traceTargetValue(step,target){
  try{return {available:true,value:expr(target,step.vars)};}
@@ -587,32 +599,40 @@ function addTraceTarget(raw){
  hiddenTraceTargets.delete(key);
  const automatic=steps.some(step=>Object.prototype.hasOwnProperty.call(step.vars,target));
  if(!automatic)extraTraceTargets.push(target);
+ if(traceTargetOrder.length)traceTargetOrder.push(key);
  return true;
 }
 function removeTraceTarget(target){
  const key=traceTargetKey(target);
  extraTraceTargets=extraTraceTargets.filter(name=>traceTargetKey(name)!==key);
  hiddenTraceTargets.add(key);
+ traceTargetOrder=traceTargetOrder.filter(item=>item!==key);
 }
-function resetTraceTargets(){extraTraceTargets=[];hiddenTraceTargets.clear();}
+function resetTraceTargets(){extraTraceTargets=[];traceTargetOrder=[];hiddenTraceTargets.clear();}
 function traceTargetFeedback(text,error=false){
  const feedback=$('traceTargetFeedback');feedback.textContent=text;feedback.hidden=!text;feedback.className='trace-target-feedback'+(error?' trace-target-error':'');
 }
 function renderTraceTargets(){
  const list=$('traceTargetList'),targets=traceColumnNames();list.replaceChildren();
- for(const target of targets){
+ for(const [position,target] of targets.entries()){
   const chip=document.createElement('span');chip.className='trace-target-chip';
   const label=document.createElement('code');label.textContent=target;
   const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.setAttribute('aria-label',target+' をトレースから外す');remove.title='トレースから外す';
   remove.addEventListener('click',()=>{removeTraceTarget(target);traceTargetFeedback(target+' をトレースから外しました。');render();$('traceTargetInput').focus({preventScroll:true});});
-  chip.append(label,remove);list.append(chip);
+  const movement=[-1,1].map(direction=>{
+   const button=document.createElement('button');button.type='button';button.className='trace-target-move';button.textContent=direction===-1?'←':'→';
+   button.setAttribute('aria-label',target+(direction===-1?' を左へ移動':' を右へ移動'));button.title=direction===-1?'左へ移動':'右へ移動';button.dataset.traceKey=traceTargetKey(target);button.dataset.move=String(direction);
+   button.disabled=direction===-1?position===0:position===targets.length-1;
+   button.addEventListener('click',()=>{if(!moveTraceTarget(target,direction))return;traceTargetFeedback(target+' の表示順を変更しました。');render();const buttons=Array.from($('traceTargetList').querySelectorAll('button[data-move]')).filter(item=>item.dataset.traceKey===traceTargetKey(target)&&!item.disabled);const focus=buttons.find(item=>item.dataset.move===String(direction))||buttons[0];if(focus)focus.focus({preventScroll:true});});
+   return button;
+  });
+  chip.append(label,...movement,remove);list.append(chip);
  }
  $('traceTargetEmpty').hidden=targets.length>0;
 }
 function setupTraceTargets(){
  $('toggleTraceTargets').addEventListener('click',()=>{
-  const panel=$('traceTargetPanel'),opening=panel.hidden;panel.hidden=!opening;$('toggleTraceTargets').setAttribute('aria-expanded',String(opening));
-  if(opening)$('traceTargetInput').focus({preventScroll:true});
+  const panel=$('traceTargetPanel');if(panel.open)return;panel.showModal();$('toggleTraceTargets').setAttribute('aria-expanded','true');$('traceTargetInput').focus({preventScroll:true});
  });
  function add(){
   const input=$('traceTargetInput');
@@ -620,6 +640,8 @@ function setupTraceTargets(){
   catch(error){traceTargetFeedback('追加できません：'+error.message,true);}
   input.focus({preventScroll:true});
  }
+ $('closeTraceTargets').addEventListener('click',()=>$('traceTargetPanel').close());
+ $('traceTargetPanel').addEventListener('close',()=>{$('toggleTraceTargets').setAttribute('aria-expanded','false');$('toggleTraceTargets').focus({preventScroll:true});});
  $('addTraceTarget').addEventListener('click',add);
  $('traceTargetInput').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();add();}});
  $('resetTraceTargets').addEventListener('click',()=>{resetTraceTargets();traceTargetFeedback('コード内の変数をすべて表示します。');render();});

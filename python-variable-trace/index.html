@@ -167,7 +167,9 @@ dialog.trace-target-panel::backdrop{background:#061c2b66}
 .trace-target-panel .trace-target-dialog-heading{position:sticky;top:0;z-index:1;margin:0;padding:14px 16px;background:#193f50;border-bottom:2px solid #cef47d;cursor:grab;touch-action:none;user-select:none}
 .trace-target-panel .trace-target-dialog-heading.is-dragging{cursor:grabbing}.trace-target-panel .trace-target-dialog-heading h2{color:#f3f8fb;font-size:17px}.trace-target-panel .trace-target-drag-hint{color:#c8dfe8;font-size:12px;margin:5px 0 0}.trace-target-panel .trace-target-dialog-heading button{cursor:pointer;background:#284f60;border:1px solid #668492;color:#fff;font-weight:700}
 .trace-target-panel .trace-target-dialog-content{padding:16px}.trace-target-panel .trace-target-dialog-content>label{color:#eff6f8}.trace-target-panel #traceTargetHelp{color:#c6dce5}.trace-target-panel .trace-target-entry input{border:1px solid #799aa8;background:#fff;color:#173544}.trace-target-panel #addTraceTarget{border:1px solid #cef47d;background:#cef47d;color:#17323f;font-weight:700}.trace-target-panel .trace-target-chip{background:#1d4555;border-color:#658694;color:#fff;gap:6px;padding:5px 6px 5px 10px}.trace-target-panel .trace-target-chip code{font-size:14px;font-weight:650}.trace-target-panel .trace-target-chip button{color:#fff;font-weight:800}.trace-target-panel .trace-target-chip .trace-target-move{min-width:34px;min-height:34px;border:1px solid #a4c76b;border-radius:6px;background:#cef47d;color:#17323f;font-size:17px;opacity:1}.trace-target-panel .trace-target-chip .trace-target-move:hover:not(:disabled){background:#e0ffa6}.trace-target-panel .trace-target-chip .trace-target-move:disabled{background:#375868;border-color:#78939f;color:#bad0da;opacity:1}.trace-target-panel .trace-target-chip button:not(.trace-target-move):hover{background:#365e70}.trace-target-panel #resetTraceTargets{border:1px solid #7595a3;background:#284f60;color:#fff}.trace-target-panel .trace-target-feedback{color:#d1f88f}.trace-target-panel .trace-target-error{color:#ffb4a8}.trace-target-panel .trace-execution-option{display:flex;align-items:center;gap:9px;margin-top:16px;padding-top:14px;border-top:1px solid #507383;font-size:14px}.trace-target-panel .trace-execution-option input{width:18px;height:18px;accent-color:#cef47d;flex:none}.trace-target-panel button:focus-visible,.trace-target-panel .trace-target-dialog-heading:focus-visible{outline:3px solid #cef47d;outline-offset:2px}
-</style><style>.workspace .tracepanel .history td.trace-execution-cell{white-space:pre-wrap;overflow-wrap:anywhere}</style></head>
+</style><style>.workspace .tracepanel .history td.trace-execution-cell{white-space:pre-wrap;overflow-wrap:anywhere}</style><style>
+.trace-target-panel .trace-target-section-label{margin:14px 0 6px;font-weight:700;color:#eff6f8;font-size:13px}.trace-target-suggestions{display:flex;gap:8px;flex-wrap:wrap}.trace-target-panel .trace-target-suggestions button{min-height:42px;min-width:44px;padding:8px 13px;border:1px solid #a4c76b;border-radius:7px;background:#cef47d;color:#17323f;font:700 14px ui-monospace,Consolas,monospace;overflow-wrap:anywhere;max-width:100%}.trace-target-panel .trace-target-suggestions button:hover{background:#e0ffa6}.trace-target-panel #traceTargetSuggestionsEmpty{color:#c6dce5}
+</style></head>
 <body class="innovia-ui innovia-trace">
 <nav class="catalog-navigation innovia-header" aria-label="教材一覧"><a class="catalog-brand" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">INNOVIA Base <span>✳</span></a><a class="catalog-return innovia-button innovia-return" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">教材一覧へ戻る</a></nav>
 <main>
@@ -206,10 +208,10 @@ dialog.trace-target-panel::backdrop{background:#061c2b66}
 <dialog id="traceTargetPanel" class="trace-target-panel" aria-labelledby="traceTargetTitle"><div id="traceTargetTitlebar" class="trace-target-dialog-heading" tabindex="0" role="group" aria-label="設定画面のタイトルバー。ドラッグまたは矢印キーで移動"><div><h2 id="traceTargetTitle">トレースする変数の設定</h2><p class="trace-target-drag-hint">タイトルバーをドラッグして移動</p></div><button type="button" id="closeTraceTargets" aria-label="変数の設定を閉じる">閉じる ×</button></div><div class="trace-target-dialog-content">
  <label for="traceTargetInput">トレースする変数・式</label>
  <div class="trace-target-entry"><input id="traceTargetInput" type="text" maxlength="120" placeholder="例：i、Data[j]、Data[j + 1]" autocomplete="off" spellcheck="false" aria-describedby="traceTargetHelp"><button type="button" id="addTraceTarget">追加</button></div>
- <p id="traceTargetHelp">◀ ▶で列の順番を変更、×で表示から外せます。「実行内容」も追加欄から戻せます。値がまだ決まらない式は「—」で表示します。</p>
- <div id="traceTargetList" class="trace-target-list" aria-label="表示する変数と式"></div>
- <p id="traceTargetEmpty">表示する変数がありません。追加欄から指定するか、コードを実行してください。</p>
- <button type="button" id="resetTraceTargets">すべての列を自動表示</button>
+ <p id="traceTargetHelp">候補をタップして追加できます。◀ ▶で順番を変更、×で表示から外せます。値がまだ決まらない式は「—」で表示します。</p>
+ <p class="trace-target-section-label">タップして追加</p><div id="traceTargetSuggestions" class="trace-target-suggestions" aria-label="追加できる変数と項目"></div><p id="traceTargetSuggestionsEmpty" hidden>候補はすべて表示中です。</p><p class="trace-target-section-label">表示する列</p><div id="traceTargetList" class="trace-target-list" aria-label="表示する変数と式"></div>
+ <p id="traceTargetEmpty">表示する列がありません。候補をタップするか、追加欄から指定してください。</p>
+ <button type="button" id="resetTraceTargets">リセット</button>
  <p id="traceTargetFeedback" class="trace-target-feedback" role="status" aria-live="polite" hidden></p>
 </div></dialog><div class="history" id="historyScroll"><table><thead id="traceHead"></thead><tbody id="history"></tbody></table></div></section></div></div>
 </section>
@@ -564,7 +566,8 @@ function setupEditorAssist(){
 
 let extraTraceTargets=[];
 let traceTargetOrder=[];
-let showTraceExecution=true;
+let showTraceExecution=false;
+const rememberedTraceTargets=new Map();
 const hiddenTraceTargets=new Set();
 function traceTargetKey(target){return target==='実行内容'?'@execution':tokenize(target).join(' ');}
 function traceColumnNames(){
@@ -600,6 +603,20 @@ function traceTargetCell(step,previous,target){
  const cell=traceTargetValue(step,target),changed=traceTargetChanged(step,previous,target);
  return '<td class="'+(changed?'changedCell':'')+'"'+(!cell.available?' title="'+escapeHTML(cell.reason)+'"':'')+'>'+escapeHTML(cell.available?format(cell.value):'—')+'</td>';
 }
+function traceSourceVariableNames(){
+ const names=new Set(steps.flatMap(step=>Object.keys(step.vars)));
+ try{
+  const visit=nodes=>{for(const node of nodes){if(node.kind==='assign')for(const target of node.targets){const name=target.match(/^[A-Za-z_]\w*/);if(name)names.add(name[0]);}if(node.kind==='for')names.add(node.variable);if(node.body)visit(node.body);if(node.branches)for(const branch of node.branches)visit(branch.body);}};
+  visit(parseCode($('source').value).nodes);
+ }catch{}
+ return Array.from(names).sort();
+}
+function availableTraceTargets(){
+ const selected=new Set(traceDisplayColumns().map(traceTargetKey)),all=new Map(traceSourceVariableNames().map(name=>[traceTargetKey(name),name]));
+ for(const [key,target] of rememberedTraceTargets)if(!all.has(key))all.set(key,target);
+ all.set(traceTargetKey('実行内容'),'実行内容');
+ return Array.from(all).filter(([key])=>!selected.has(key)).map(([,target])=>target);
+}
 function addTraceTarget(raw){
  const target=raw.trim();
  if(target==='実行内容'){if(showTraceExecution)return false;showTraceExecution=true;if(traceTargetOrder.length)traceTargetOrder.push(traceTargetKey(target));return true;}
@@ -612,6 +629,7 @@ function addTraceTarget(raw){
  hiddenTraceTargets.delete(key);
  const automatic=steps.some(step=>Object.prototype.hasOwnProperty.call(step.vars,target));
  if(!automatic)extraTraceTargets.push(target);
+ rememberedTraceTargets.set(key,target);
  if(traceTargetOrder.length)traceTargetOrder.push(key);
  return true;
 }
@@ -622,9 +640,16 @@ function removeTraceTarget(target){
  hiddenTraceTargets.add(key);
  traceTargetOrder=traceTargetOrder.filter(item=>item!==key);
 }
-function resetTraceTargets(){extraTraceTargets=[];traceTargetOrder=[];hiddenTraceTargets.clear();showTraceExecution=true;}
+function resetTraceTargets(){extraTraceTargets=[];traceTargetOrder=[];hiddenTraceTargets.clear();rememberedTraceTargets.clear();showTraceExecution=false;}
 function traceTargetFeedback(text,error=false){
  const feedback=$('traceTargetFeedback');feedback.textContent=text;feedback.hidden=!text;feedback.className='trace-target-feedback'+(error?' trace-target-error':'');
+}
+function renderTraceTargetSuggestions(){
+ const list=$('traceTargetSuggestions'),targets=availableTraceTargets();list.replaceChildren();
+ for(const target of targets){const button=document.createElement('button');button.type='button';button.textContent='＋ '+target;button.setAttribute('aria-label',target+' を追加');
+  button.addEventListener('click',()=>{addTraceTarget(target);traceTargetFeedback(target+' を追加しました。');render();$('traceTargetTitlebar').focus({preventScroll:true});});list.append(button);
+ }
+ $('traceTargetSuggestionsEmpty').hidden=targets.length>0;
 }
 function renderTraceTargets(){
  const list=$('traceTargetList'),targets=traceDisplayColumns();list.replaceChildren();
@@ -632,7 +657,7 @@ function renderTraceTargets(){
   const chip=document.createElement('span');chip.className='trace-target-chip';
   const label=document.createElement('code');label.textContent=target;
   const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.setAttribute('aria-label',target+' をトレースから外す');remove.title='トレースから外す';
-  remove.addEventListener('click',()=>{removeTraceTarget(target);traceTargetFeedback(target+' をトレースから外しました。');render();$('traceTargetInput').focus({preventScroll:true});});
+  remove.addEventListener('click',()=>{removeTraceTarget(target);traceTargetFeedback(target+' をトレースから外しました。');render();$('traceTargetTitlebar').focus({preventScroll:true});});
   const movement=[-1,1].map(direction=>{
    const button=document.createElement('button');button.type='button';button.className='trace-target-move';button.textContent=direction===-1?'◀':'▶';
    button.setAttribute('aria-label',target+(direction===-1?' を左へ移動':' を右へ移動'));button.title=direction===-1?'左へ移動':'右へ移動';button.dataset.traceKey=traceTargetKey(target);button.dataset.move=String(direction);
@@ -643,12 +668,13 @@ function renderTraceTargets(){
   chip.append(label,...movement,remove);list.append(chip);
  }
  $('traceTargetEmpty').hidden=targets.length>0;
+ renderTraceTargetSuggestions();
  keepTraceTargetPanelVisible();
 }
 function setupTraceTargets(){
  setupTraceTargetDragging();
  $('toggleTraceTargets').addEventListener('click',()=>{
-  const panel=$('traceTargetPanel');if(panel.open)return;panel.showModal();keepTraceTargetPanelVisible();$('toggleTraceTargets').setAttribute('aria-expanded','true');$('traceTargetInput').focus({preventScroll:true});
+  const panel=$('traceTargetPanel');if(panel.open)return;panel.showModal();keepTraceTargetPanelVisible();$('toggleTraceTargets').setAttribute('aria-expanded','true');$('traceTargetTitlebar').focus({preventScroll:true});
  });
  function add(){
   const input=$('traceTargetInput');
@@ -660,7 +686,7 @@ function setupTraceTargets(){
  $('traceTargetPanel').addEventListener('close',()=>{$('toggleTraceTargets').setAttribute('aria-expanded','false');$('toggleTraceTargets').focus({preventScroll:true});});
  $('addTraceTarget').addEventListener('click',add);
  $('traceTargetInput').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();add();}});
- $('resetTraceTargets').addEventListener('click',()=>{resetTraceTargets();traceTargetFeedback('コード内の変数と実行内容をすべて表示します。');render();});
+ $('resetTraceTargets').addEventListener('click',()=>{resetTraceTargets();traceTargetFeedback('列の設定を初期状態に戻しました。');render();});
 }
 
 let traceTargetPosition=null;

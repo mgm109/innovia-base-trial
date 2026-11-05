@@ -155,7 +155,10 @@ main>.app-intro{padding:6px 0 10px}main>.app-intro .app-category{font-size:12px;
  .innovia-trace .workspace .tracepanel .history{background:#fbfdff;color:#173544}
 }
 </style>
-</head>
+<style>
+.trace-target-panel{margin:0 0 10px;padding:12px;border:1px solid #b8d9d2;border-radius:9px;background:#f5fbf9;color:#173544}
+.trace-target-panel[hidden]{display:none}.trace-target-panel label{font-size:13px;font-weight:700}.trace-target-entry{display:flex;gap:7px;margin-top:6px}.trace-target-entry input{flex:1;min-width:0;width:100%;padding:8px 10px;border:1px solid #acc3c9;border-radius:7px;background:#fff;color:#173544;font:14px ui-monospace,Consolas,monospace}.trace-target-panel p{margin:7px 0;font-size:12px;line-height:1.5}.trace-target-list{display:flex;gap:7px;flex-wrap:wrap;margin:9px 0}.trace-target-chip{display:inline-flex;align-items:center;max-width:100%;border:1px solid #a4cbc3;border-radius:7px;background:#fff;color:#174d4c;padding:2px 3px 2px 9px;gap:4px}.trace-target-chip code{overflow-wrap:anywhere;font:13px ui-monospace,Consolas,monospace}.trace-target-chip button{flex:none;border:0;background:transparent;color:#174d4c;padding:3px 8px;min-width:30px;min-height:30px;font-size:19px;line-height:1}.trace-target-chip button:hover{background:#e3f3ef}.trace-target-panel #resetTraceTargets{font-size:12px;padding:6px 9px;background:#fff;color:#174d4c}.trace-target-feedback{color:#186239}.trace-target-feedback.trace-target-error{color:#962c22}#toggleTraceTargets{margin-left:auto;white-space:nowrap}
+</style></head>
 <body class="innovia-ui innovia-trace">
 <nav class="catalog-navigation innovia-header" aria-label="教材一覧"><a class="catalog-brand" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">INNOVIA Base <span>✳</span></a><a class="catalog-return innovia-button innovia-return" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">教材一覧へ戻る</a></nav>
 <main>
@@ -190,7 +193,16 @@ main>.app-intro{padding:6px 0 10px}main>.app-intro .app-category{font-size:12px;
 
 </div>
 <section class="panel execution editor workspace"><button class="innovia-button" type="button" id="showCompletions" hidden aria-label="入力候補を表示">入力候補</button><div class="run-toolbar"><div class="stepbar"><button class="innovia-button" id="prev">◀ 戻る</button><button class="primary innovia-button innovia-primary" id="next">▶ 1行実行</button><button class="innovia-button" id="all">最後まで</button><button class="innovia-button" id="reset">最初から</button></div><div id="position" class="muted"></div></div><span id="editorGuide" class="visually-hidden">Enterで改行。入力候補はTabまたはクリックで入力できます。</span><div id="msg" role="status" class="visually-hidden"></div><div class="work-grid"><div class="code-pane"><h2 class="pane-title">コード</h2><div class="code-output"><div class="source-editor"><div id="sourceGutter" class="source-gutter" aria-hidden="true"><div id="sourceGutterLines"></div></div><pre id="sourceHighlight" class="source-highlight" aria-hidden="true"><code id="sourceHighlightCode"></code></pre><textarea id="source" spellcheck="false" wrap="off" autocomplete="off" autocapitalize="off" aria-label="Pythonコード入力欄" aria-describedby="editorGuide"></textarea><div id="completionPanel" class="completion-panel" hidden><div class="completion-heading"><strong>入力候補</strong><span>このアプリで使える書き方</span></div><div id="completionList" role="listbox" aria-label="Pythonの入力候補"></div></div></div><div id="editorError" class="editor-error" role="alert" hidden></div><div class="codeView" id="codeView" hidden></div><div id="executionOutput" class="execution-output hidden" role="status" aria-label="実行結果" aria-live="polite" aria-atomic="true"><span class="output-marker">実行結果</span><div class="output-content"><pre id="outputText"></pre><div id="graphOutput"></div></div></div></div></div><p id="graphHelp" class="muted hidden">グラフは plt.show() の行で表示されます。折れ線・棒グラフとタイトル・軸ラベルに対応しています。</p><div class="trace-side-by-side"><div class="current-vars"><strong>現在の変数</strong><div class="variable-table"><table><thead id="varsHead"></thead><tbody id="vars"></tbody></table></div><p id="emptyVars" class="muted">まだ変数はありません。</p></div>
-<section class="tracepanel"><div class="sectionhead trace-heading"><h2>変数のトレース</h2></div><div class="history" id="historyScroll"><table><thead id="traceHead"></thead><tbody id="history"></tbody></table></div></section></div></div>
+<section class="tracepanel"><div class="sectionhead trace-heading"><h2>変数のトレース</h2><button type="button" id="toggleTraceTargets" aria-expanded="false" aria-controls="traceTargetPanel">変数を追加・削除</button></div>
+<div id="traceTargetPanel" class="trace-target-panel" hidden>
+ <label for="traceTargetInput">トレースする変数・式</label>
+ <div class="trace-target-entry"><input id="traceTargetInput" type="text" maxlength="120" placeholder="例：i、Data[j]、Data[j + 1]" autocomplete="off" spellcheck="false" aria-describedby="traceTargetHelp"><button type="button" id="addTraceTarget">追加</button></div>
+ <p id="traceTargetHelp">×で表示から外せます。値がまだ決まらない式は「—」で表示します。</p>
+ <div id="traceTargetList" class="trace-target-list" aria-label="表示する変数と式"></div>
+ <p id="traceTargetEmpty">表示する変数がありません。追加欄から指定するか、コードを実行してください。</p>
+ <button type="button" id="resetTraceTargets">すべての変数を自動表示</button>
+ <p id="traceTargetFeedback" class="trace-target-feedback" role="status" aria-live="polite" hidden></p>
+</div><div class="history" id="historyScroll"><table><thead id="traceHead"></thead><tbody id="history"></tbody></table></div></section></div></div>
 </section>
 
 </main>
@@ -206,7 +218,7 @@ function reprVars(v){return Object.keys(v).sort().map(k=>k+'='+format(v[k])).joi
 function same(a,b){return JSON.stringify(a)===JSON.stringify(b)}
 function tokenize(s){let out=[],re=/\s+|(?:\d+(?:\.\d*)?|\.\d+)|(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(?:==|!=|<=|>=|\/\/|\*\*)|[A-Za-z_]\w*|./gy,m;while((m=re.exec(s))){let t=m[0];if(/^\s+$/.test(t))continue;if(!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(t)&&!/^['"]/.test(t)&&!/^(?:==|!=|<=|>=|\/\/|\*\*|[A-Za-z_]\w*|[+*\/%()\[\]\-,<>])$/.test(t))throw Error('未対応の記号: '+t);out.push(t)}return out}
 function truth(v){return Array.isArray(v)?v.length>0:Boolean(v)}
-function expr(s,env){
+function expr(s,env,execute=true){
  const ts=tokenize(s);let p=0;
  const prec={'or':1,'and':2,'==':3,'!=':3,'<':3,'>':3,'<=':3,'>=':3,'+':4,'-':4,'*':5,'/':5,'//':5,'%':5,'**':7};
  const peek=()=>ts[p],take=()=>ts[p++];
@@ -268,7 +280,7 @@ function expr(s,env){
   }
   return lhs;
  }
- const result=parse();if(p!==ts.length)throw Error('式を読み取れません: '+ts.slice(p).join(' '));return result;
+ const result=parse(0,execute);if(p!==ts.length)throw Error('式を読み取れません: '+ts.slice(p).join(' '));return result;
 }
 function splitArgs(s){let dep=0,q='',start=0,out=[];for(let i=0;i<s.length;i++){let c=s[i];if(q){if(c==='\\')i++;else if(c===q)q='';continue}if(c==='"'||c==="'")q=c;else if(c==='('||c==='[')dep++;else if(c===')'||c===']')dep--;else if(c===','&&dep===0){out.push(s.slice(start,i).trim());start=i+1}}out.push(s.slice(start).trim());return out.filter(x=>x!=='')}
 function splitAssignment(text){
@@ -541,14 +553,86 @@ function setupEditorAssist(){
  $('showCompletions').onclick=()=>{input.focus();completionDismissed=false;updateCompletions(true);};window.addEventListener('resize',()=>{syncEditorHighlight();positionCompletions();});new ResizeObserver(positionCompletions).observe(input);syncEditorHighlight();
 }
 
+let extraTraceTargets=[];
+const hiddenTraceTargets=new Set();
+function traceTargetKey(target){return tokenize(target).join(' ');}
+function traceColumnNames(){
+ const automatic=Array.from(new Set(steps.flatMap(step=>Object.keys(step.vars)))).sort();
+ const selected=automatic.filter(name=>!hiddenTraceTargets.has(traceTargetKey(name)));
+ const keys=new Set(selected.map(traceTargetKey));
+ for(const target of extraTraceTargets){const key=traceTargetKey(target);if(!keys.has(key)){selected.push(target);keys.add(key);}}
+ return selected;
+}
+function traceTargetValue(step,target){
+ try{return {available:true,value:expr(target,step.vars)};}
+ catch(error){return {available:false,reason:error.message};}
+}
+function traceTargetText(step,target){const cell=traceTargetValue(step,target);return cell.available?format(cell.value):'—';}
+function traceTargetChanged(step,previous,target){
+ const cell=traceTargetValue(step,target),before=traceTargetValue(previous||{vars:{}},target);
+ return cell.available&&(!before.available||!same(cell.value,before.value));
+}
+function traceTargetCell(step,previous,target){
+ const cell=traceTargetValue(step,target),changed=traceTargetChanged(step,previous,target);
+ return '<td class="'+(changed?'changedCell':'')+'"'+(!cell.available?' title="'+escapeHTML(cell.reason)+'"':'')+'>'+escapeHTML(cell.available?format(cell.value):'—')+'</td>';
+}
+function addTraceTarget(raw){
+ const target=raw.trim();
+ if(!target)throw Error('変数名や式を入力してください。例：i、Data[j]');
+ if(target.length>120)throw Error('変数名や式は120文字以内で入力してください。');
+ // Parse without evaluating: a variable may not have a value until a later step.
+ expr(target,{},false);
+ const key=traceTargetKey(target),existing=traceColumnNames().some(name=>traceTargetKey(name)===key);
+ if(existing)return false;
+ hiddenTraceTargets.delete(key);
+ const automatic=steps.some(step=>Object.prototype.hasOwnProperty.call(step.vars,target));
+ if(!automatic)extraTraceTargets.push(target);
+ return true;
+}
+function removeTraceTarget(target){
+ const key=traceTargetKey(target);
+ extraTraceTargets=extraTraceTargets.filter(name=>traceTargetKey(name)!==key);
+ hiddenTraceTargets.add(key);
+}
+function resetTraceTargets(){extraTraceTargets=[];hiddenTraceTargets.clear();}
+function traceTargetFeedback(text,error=false){
+ const feedback=$('traceTargetFeedback');feedback.textContent=text;feedback.hidden=!text;feedback.className='trace-target-feedback'+(error?' trace-target-error':'');
+}
+function renderTraceTargets(){
+ const list=$('traceTargetList'),targets=traceColumnNames();list.replaceChildren();
+ for(const target of targets){
+  const chip=document.createElement('span');chip.className='trace-target-chip';
+  const label=document.createElement('code');label.textContent=target;
+  const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.setAttribute('aria-label',target+' をトレースから外す');remove.title='トレースから外す';
+  remove.addEventListener('click',()=>{removeTraceTarget(target);traceTargetFeedback(target+' をトレースから外しました。');render();$('traceTargetInput').focus({preventScroll:true});});
+  chip.append(label,remove);list.append(chip);
+ }
+ $('traceTargetEmpty').hidden=targets.length>0;
+}
+function setupTraceTargets(){
+ $('toggleTraceTargets').addEventListener('click',()=>{
+  const panel=$('traceTargetPanel'),opening=panel.hidden;panel.hidden=!opening;$('toggleTraceTargets').setAttribute('aria-expanded',String(opening));
+  if(opening)$('traceTargetInput').focus({preventScroll:true});
+ });
+ function add(){
+  const input=$('traceTargetInput');
+  try{const added=addTraceTarget(input.value);traceTargetFeedback(added?'トレース対象に追加しました。':'すでにトレース対象に含まれています。');input.value='';render();}
+  catch(error){traceTargetFeedback('追加できません：'+error.message,true);}
+  input.focus({preventScroll:true});
+ }
+ $('addTraceTarget').addEventListener('click',add);
+ $('traceTargetInput').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();add();}});
+ $('resetTraceTargets').addEventListener('click',()=>{resetTraceTargets();traceTargetFeedback('コード内の変数をすべて表示します。');render();});
+}
+
 function fitTraceColumns(){
  const table=$('historyScroll').querySelector('table'),available=$('historyScroll').clientWidth;if(!available)return;
- const names=Array.from(new Set(steps.flatMap(step=>Object.keys(step.vars)))).sort();
+ const names=traceColumnNames();
  const canvas=fitTraceColumns.canvas||(fitTraceColumns.canvas=document.createElement('canvas')),ctx=canvas.getContext('2d'),style=getComputedStyle(table);
  ctx.font='700 '+style.fontSize+' '+style.fontFamily;const measure=text=>ctx.measureText(String(text)).width;
  const stepWidth=Math.ceil(Math.max(measure('ステップ'),measure(Math.max(1,steps.length-1)))+24);
  // 全ステップの値を測り、実行中に列の幅が変わらないようにする。
- const wanted=names.map(name=>Math.max(64,Math.min(168,Math.ceil(Math.max(measure(name),...steps.map(step=>Object.hasOwn(step.vars,name)?measure(format(step.vars[name])):measure('—')))+32))));
+ const wanted=names.map(name=>Math.max(64,Math.min(168,Math.ceil(Math.max(measure(name),...steps.map(step=>measure(traceTargetText(step,name))))+32))));
  const contentMinimum=Math.min(240,Math.max(80,available*.4)),reserve=Math.min(contentMinimum,Math.max(80,available-stepWidth-56*names.length)),budget=Math.max(0,available-stepWidth-reserve),total=wanted.reduce((sum,w)=>sum+w,0);
  let widths=wanted;
  if(total>budget&&names.length){const minimum=Math.min(56,budget/names.length),extra=Math.max(0,budget-minimum*names.length),weights=wanted.map(width=>Math.max(1,width-minimum)),sum=weights.reduce((a,b)=>a+b,0);widths=weights.map(weight=>minimum+extra*weight/sum);}
@@ -565,12 +649,12 @@ function message(m,type=''){ $('msg').className='status '+type;$('msg').textCont
 function fileFeedback(m,type='error'){$('fileFeedback').className='file-feedback '+type;$('fileFeedback').textContent=m}
 function clearFileFeedback(){$('fileFeedback').className='file-feedback hidden';$('fileFeedback').textContent=''}
 function compile(){hideCompletions();clearEditorIssue();try{preflightCode($('source').value);let result=buildSteps($('source').value);steps=result.trace;lines=result.raw;index=0;lastSource=$('source').value;message('✓ 解析完了。'+(steps.length-1)+'ステップで実行できます。','success');render()}catch(e){steps=[];lines=$('source').value.replace(/\r/g,'').split('\n');index=0;lastSource='';showEditorIssue(e);message('⚠ '+(editorIssue.line?editorIssue.line+'行目を確認してください。':'コードを確認してください。')+'コード欄の下にヒントを表示しています。','error');render()}}
-function render(){syncEditorHighlight();let s=steps[index]||{vars:{},changed:[],output:[],line:0,text:'開始前'};let next=steps[index+1];$('codeView').innerHTML=lines.map((line,i)=>`<div class="line ${s.line===i+1?'done':''} ${next&&next.line===i+1?'active':''} ${editorIssue&&editorIssue.line===i+1?'source-error':''}"><span class="num">${i+1}</span><span class="src">${syntaxLine(line)||' '}</span></div>`).join('');revealCodeLine();$('outputText').textContent=s.output.join('\n');renderGraphs(s.graphs||[]);$('executionOutput').classList.toggle('hidden',s.output.length===0&&!(s.graphs||[]).length);$('graphHelp').classList.toggle('hidden',!lines.some(line=>line.trim()==='import matplotlib.pyplot as plt'));let names=Object.keys(s.vars).sort();$('varsHead').innerHTML='<tr>'+names.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'</tr>';$('vars').innerHTML='<tr>'+names.map(k=>'<td class="'+(s.changed.includes(k)?'changedCell':'')+'">'+escapeHTML(format(s.vars[k]))+'</td>').join('')+'</tr>';$('emptyVars').classList.toggle('hidden',names.length>0);let traceNames=Array.from(new Set(steps.flatMap(st=>Object.keys(st.vars)))).sort();$('traceHead').innerHTML='<tr><th>ステップ</th>'+traceNames.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'<th>実行内容</th></tr>';$('history').innerHTML=steps.slice(1,index+1).map((t,i)=>'<tr class="'+(i+1===index?'current':'')+'"><td>'+(i+1)+'</td>'+traceNames.map(k=>'<td class="'+(t.changed.includes(k)?'changedCell':'')+'">'+(Object.prototype.hasOwnProperty.call(t.vars,k)?escapeHTML(format(t.vars[k])):'—')+'</td>').join('')+'<td>'+escapeHTML(t.text)+'</td></tr>').join('');fitTraceColumns();$('prev').disabled=index===0;const canCompile=!editorIssue&&$('source').value.trim()&&$('source').value!==lastSource;$('next').disabled=!next&&!canCompile;$('all').disabled=!next&&!canCompile;$('position').textContent=editorIssue?'コードを確認してください':!steps.length?'':index+' / '+Math.max(0,steps.length-1)+' ステップ'+(next?'':' · 終了');}
+function render(){syncEditorHighlight();let s=steps[index]||{vars:{},changed:[],output:[],line:0,text:'開始前'};let next=steps[index+1];$('codeView').innerHTML=lines.map((line,i)=>`<div class="line ${s.line===i+1?'done':''} ${next&&next.line===i+1?'active':''} ${editorIssue&&editorIssue.line===i+1?'source-error':''}"><span class="num">${i+1}</span><span class="src">${syntaxLine(line)||' '}</span></div>`).join('');revealCodeLine();$('outputText').textContent=s.output.join('\n');renderGraphs(s.graphs||[]);$('executionOutput').classList.toggle('hidden',s.output.length===0&&!(s.graphs||[]).length);$('graphHelp').classList.toggle('hidden',!lines.some(line=>line.trim()==='import matplotlib.pyplot as plt'));let names=Object.keys(s.vars).sort();$('varsHead').innerHTML='<tr>'+names.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'</tr>';$('vars').innerHTML='<tr>'+names.map(k=>'<td class="'+(s.changed.includes(k)?'changedCell':'')+'">'+escapeHTML(format(s.vars[k]))+'</td>').join('')+'</tr>';$('emptyVars').classList.toggle('hidden',names.length>0);renderTraceTargets();let traceNames=traceColumnNames();$('traceHead').innerHTML='<tr><th>ステップ</th>'+traceNames.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'<th>実行内容</th></tr>';$('history').innerHTML=steps.slice(1,index+1).map((t,i)=>'<tr class="'+(i+1===index?'current':'')+'"><td>'+(i+1)+'</td>'+traceNames.map(k=>traceTargetCell(t,steps[i],k)).join('')+'<td>'+escapeHTML(t.text)+'</td></tr>').join('');fitTraceColumns();$('prev').disabled=index===0;const canCompile=!editorIssue&&$('source').value.trim()&&$('source').value!==lastSource;$('next').disabled=!next&&!canCompile;$('all').disabled=!next&&!canCompile;$('position').textContent=editorIssue?'コードを確認してください':!steps.length?'':index+' / '+Math.max(0,steps.length-1)+' ステップ'+(next?'':' · 終了');}
 function step(){if($('source').value!==lastSource)compile();if(index<steps.length-1){index++;render()}}
 $('reset').addEventListener('click',compile);$('prev').addEventListener('click',()=>{if(index>0){index--;render()}});$('next').addEventListener('click',step);$('all').addEventListener('click',()=>{if($('source').value!==lastSource)compile();if(steps.length){index=steps.length-1;render()}});$('sample').addEventListener('change',()=>{if(!$('sample').value)return;$('source').value=samples[$('sample').value];currentFileName=$('sample').selectedOptions[0].textContent;updateOpenedName();$('sample').value='';compile()});$('newCode').addEventListener('click',()=>{hideSaveChoices();hideCompletions();clearEditorIssue();clearFileFeedback();if($('source').value.trim()&&!confirm('新規作成しますか？ 現在のコードとトレース履歴は消去されます。'))return;currentFileName='';$('source').value='';updateOpenedName();$('openedName').focus();$('sample').selectedIndex=-1;steps=[];index=0;lines=[];lastSource='';$('source').focus();render();message('プログラム名を入力してから、Pythonコードを作成してください。');});function exportRows(){
- let names=Array.from(new Set(steps.flatMap(s=>Object.keys(s.vars)))).sort();
+ let names=traceColumnNames();
  let rows=[['ステップ',...names,'実行内容']];
- steps.slice(1,index+1).forEach((s,i)=>rows.push([String(i+1),...names.map(k=>k in s.vars?format(s.vars[k]):''),s.text]));
+ steps.slice(1,index+1).forEach((s,i)=>rows.push([String(i+1),...names.map(k=>traceTargetText(s,k)),s.text]));
  return rows;
 }
 function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
@@ -726,7 +810,7 @@ $('fileInput').addEventListener('change',async(e)=>{
 });
 
 updateOpenedName();
-setupEditorAssist();observeTraceWidth();$('source').value=samples.basic;compile();
+setupEditorAssist();observeTraceWidth();setupTraceTargets();$('source').value=samples.basic;compile();
 })();
 </script>
 </body></html>

@@ -161,6 +161,12 @@ main>.app-intro{padding:6px 0 10px}main>.app-intro .app-category{font-size:12px;
 </style><style>
 dialog.trace-target-panel{width:min(620px,calc(100vw - 32px));max-width:none;max-height:80vh;overflow:auto;position:fixed;inset:0;margin:auto;padding:16px;box-shadow:0 12px 44px #0005}
 dialog.trace-target-panel::backdrop{background:#061c2b99}.trace-target-dialog-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.trace-target-dialog-heading h2{margin:0;font-size:17px;color:#173544}.trace-target-dialog-heading button{flex:none;background:#fff;color:#174d4c;font-size:13px;padding:7px 12px}.trace-target-chip .trace-target-move{font-size:16px;min-width:30px;min-height:32px;padding:4px 6px}.trace-target-chip button:disabled{opacity:.3;cursor:default}.trace-target-chip button:disabled:hover{background:transparent}.trace-target-panel button:focus-visible{outline:2px solid #1763b6;outline-offset:1px}
+</style><style>
+dialog.trace-target-panel{padding:0;width:min(700px,calc(100vw - 24px));max-height:calc(100dvh - 24px);border:1px solid #426575;border-radius:13px;background:#11313f;color:#eff6f8;box-shadow:0 18px 60px #0008}
+dialog.trace-target-panel::backdrop{background:#061c2b66}
+.trace-target-panel .trace-target-dialog-heading{position:sticky;top:0;z-index:1;margin:0;padding:14px 16px;background:#193f50;border-bottom:2px solid #cef47d;cursor:grab;touch-action:none;user-select:none}
+.trace-target-panel .trace-target-dialog-heading.is-dragging{cursor:grabbing}.trace-target-panel .trace-target-dialog-heading h2{color:#f3f8fb;font-size:17px}.trace-target-panel .trace-target-drag-hint{color:#c8dfe8;font-size:12px;margin:5px 0 0}.trace-target-panel .trace-target-dialog-heading button{cursor:pointer;background:#284f60;border:1px solid #668492;color:#fff;font-weight:700}
+.trace-target-panel .trace-target-dialog-content{padding:16px}.trace-target-panel .trace-target-dialog-content>label{color:#eff6f8}.trace-target-panel #traceTargetHelp{color:#c6dce5}.trace-target-panel .trace-target-entry input{border:1px solid #799aa8;background:#fff;color:#173544}.trace-target-panel #addTraceTarget{border:1px solid #cef47d;background:#cef47d;color:#17323f;font-weight:700}.trace-target-panel .trace-target-chip{background:#1d4555;border-color:#658694;color:#fff;gap:6px;padding:5px 6px 5px 10px}.trace-target-panel .trace-target-chip code{font-size:14px;font-weight:650}.trace-target-panel .trace-target-chip button{color:#fff;font-weight:800}.trace-target-panel .trace-target-chip .trace-target-move{min-width:34px;min-height:34px;border:1px solid #a4c76b;border-radius:6px;background:#cef47d;color:#17323f;font-size:17px;opacity:1}.trace-target-panel .trace-target-chip .trace-target-move:hover:not(:disabled){background:#e0ffa6}.trace-target-panel .trace-target-chip .trace-target-move:disabled{background:#375868;border-color:#78939f;color:#bad0da;opacity:1}.trace-target-panel .trace-target-chip button:not(.trace-target-move):hover{background:#365e70}.trace-target-panel #resetTraceTargets{border:1px solid #7595a3;background:#284f60;color:#fff}.trace-target-panel .trace-target-feedback{color:#d1f88f}.trace-target-panel .trace-target-error{color:#ffb4a8}.trace-target-panel .trace-execution-option{display:flex;align-items:center;gap:9px;margin-top:16px;padding-top:14px;border-top:1px solid #507383;font-size:14px}.trace-target-panel .trace-execution-option input{width:18px;height:18px;accent-color:#cef47d;flex:none}.trace-target-panel button:focus-visible,.trace-target-panel .trace-target-dialog-heading:focus-visible{outline:3px solid #cef47d;outline-offset:2px}
 </style></head>
 <body class="innovia-ui innovia-trace">
 <nav class="catalog-navigation innovia-header" aria-label="教材一覧"><a class="catalog-brand" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">INNOVIA Base <span>✳</span></a><a class="catalog-return innovia-button innovia-return" target="_top" href="https://script.google.com/macros/s/AKfycbwVUIFEbfhPXOxzRA3UTZg8nkzOflQUhPFOrAqiy8wsqe4lyb8TEVw429HgGmJxQm0Oqw/exec?page=catalog">教材一覧へ戻る</a></nav>
@@ -197,15 +203,15 @@ dialog.trace-target-panel::backdrop{background:#061c2b99}.trace-target-dialog-he
 </div>
 <section class="panel execution editor workspace"><button class="innovia-button" type="button" id="showCompletions" hidden aria-label="入力候補を表示">入力候補</button><div class="run-toolbar"><div class="stepbar"><button class="innovia-button" id="prev">◀ 戻る</button><button class="primary innovia-button innovia-primary" id="next">▶ 1行実行</button><button class="innovia-button" id="all">最後まで</button><button class="innovia-button" id="reset">最初から</button></div><div id="position" class="muted"></div></div><span id="editorGuide" class="visually-hidden">Enterで改行。入力候補はTabまたはクリックで入力できます。</span><div id="msg" role="status" class="visually-hidden"></div><div class="work-grid"><div class="code-pane"><h2 class="pane-title">コード</h2><div class="code-output"><div class="source-editor"><div id="sourceGutter" class="source-gutter" aria-hidden="true"><div id="sourceGutterLines"></div></div><pre id="sourceHighlight" class="source-highlight" aria-hidden="true"><code id="sourceHighlightCode"></code></pre><textarea id="source" spellcheck="false" wrap="off" autocomplete="off" autocapitalize="off" aria-label="Pythonコード入力欄" aria-describedby="editorGuide"></textarea><div id="completionPanel" class="completion-panel" hidden><div class="completion-heading"><strong>入力候補</strong><span>このアプリで使える書き方</span></div><div id="completionList" role="listbox" aria-label="Pythonの入力候補"></div></div></div><div id="editorError" class="editor-error" role="alert" hidden></div><div class="codeView" id="codeView" hidden></div><div id="executionOutput" class="execution-output hidden" role="status" aria-label="実行結果" aria-live="polite" aria-atomic="true"><span class="output-marker">実行結果</span><div class="output-content"><pre id="outputText"></pre><div id="graphOutput"></div></div></div></div></div><p id="graphHelp" class="muted hidden">グラフは plt.show() の行で表示されます。折れ線・棒グラフとタイトル・軸ラベルに対応しています。</p><div class="trace-side-by-side"><div class="current-vars"><strong>現在の変数</strong><div class="variable-table"><table><thead id="varsHead"></thead><tbody id="vars"></tbody></table></div><p id="emptyVars" class="muted">まだ変数はありません。</p></div>
 <section class="tracepanel"><div class="sectionhead trace-heading"><h2>変数のトレース</h2><button type="button" id="toggleTraceTargets" aria-expanded="false" aria-controls="traceTargetPanel">変数の表示設定</button></div>
-<dialog id="traceTargetPanel" class="trace-target-panel" aria-labelledby="traceTargetTitle"><div class="trace-target-dialog-heading"><h2 id="traceTargetTitle">トレースする変数の設定</h2><button type="button" id="closeTraceTargets" aria-label="変数の設定を閉じる">閉じる</button></div>
+<dialog id="traceTargetPanel" class="trace-target-panel" aria-labelledby="traceTargetTitle"><div id="traceTargetTitlebar" class="trace-target-dialog-heading" tabindex="0" role="group" aria-label="設定画面のタイトルバー。ドラッグまたは矢印キーで移動"><div><h2 id="traceTargetTitle">トレースする変数の設定</h2><p class="trace-target-drag-hint">タイトルバーをドラッグして移動</p></div><button type="button" id="closeTraceTargets" aria-label="変数の設定を閉じる">閉じる ×</button></div><div class="trace-target-dialog-content">
  <label for="traceTargetInput">トレースする変数・式</label>
  <div class="trace-target-entry"><input id="traceTargetInput" type="text" maxlength="120" placeholder="例：i、Data[j]、Data[j + 1]" autocomplete="off" spellcheck="false" aria-describedby="traceTargetHelp"><button type="button" id="addTraceTarget">追加</button></div>
  <p id="traceTargetHelp">← →で列の順番を変更、×で表示から外せます。値がまだ決まらない式は「—」で表示します。</p>
  <div id="traceTargetList" class="trace-target-list" aria-label="表示する変数と式"></div>
  <p id="traceTargetEmpty">表示する変数がありません。追加欄から指定するか、コードを実行してください。</p>
- <button type="button" id="resetTraceTargets">すべての変数を自動表示</button>
+ <button type="button" id="resetTraceTargets">すべての変数を自動表示</button><label class="trace-execution-option"><input type="checkbox" id="showTraceExecution" checked>右端の「実行内容」列を表示する</label>
  <p id="traceTargetFeedback" class="trace-target-feedback" role="status" aria-live="polite" hidden></p>
-</dialog><div class="history" id="historyScroll"><table><thead id="traceHead"></thead><tbody id="history"></tbody></table></div></section></div></div>
+</div></dialog><div class="history" id="historyScroll"><table><thead id="traceHead"></thead><tbody id="history"></tbody></table></div></section></div></div>
 </section>
 
 </main>
@@ -558,6 +564,7 @@ function setupEditorAssist(){
 
 let extraTraceTargets=[];
 let traceTargetOrder=[];
+let showTraceExecution=true;
 const hiddenTraceTargets=new Set();
 function traceTargetKey(target){return tokenize(target).join(' ');}
 function traceColumnNames(){
@@ -620,7 +627,7 @@ function renderTraceTargets(){
   const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.setAttribute('aria-label',target+' をトレースから外す');remove.title='トレースから外す';
   remove.addEventListener('click',()=>{removeTraceTarget(target);traceTargetFeedback(target+' をトレースから外しました。');render();$('traceTargetInput').focus({preventScroll:true});});
   const movement=[-1,1].map(direction=>{
-   const button=document.createElement('button');button.type='button';button.className='trace-target-move';button.textContent=direction===-1?'←':'→';
+   const button=document.createElement('button');button.type='button';button.className='trace-target-move';button.textContent=direction===-1?'◀':'▶';
    button.setAttribute('aria-label',target+(direction===-1?' を左へ移動':' を右へ移動'));button.title=direction===-1?'左へ移動':'右へ移動';button.dataset.traceKey=traceTargetKey(target);button.dataset.move=String(direction);
    button.disabled=direction===-1?position===0:position===targets.length-1;
    button.addEventListener('click',()=>{if(!moveTraceTarget(target,direction))return;traceTargetFeedback(target+' の表示順を変更しました。');render();const buttons=Array.from($('traceTargetList').querySelectorAll('button[data-move]')).filter(item=>item.dataset.traceKey===traceTargetKey(target)&&!item.disabled);const focus=buttons.find(item=>item.dataset.move===String(direction))||buttons[0];if(focus)focus.focus({preventScroll:true});});
@@ -629,10 +636,12 @@ function renderTraceTargets(){
   chip.append(label,...movement,remove);list.append(chip);
  }
  $('traceTargetEmpty').hidden=targets.length>0;
+ keepTraceTargetPanelVisible();
 }
 function setupTraceTargets(){
+ setupTraceTargetDragging();
  $('toggleTraceTargets').addEventListener('click',()=>{
-  const panel=$('traceTargetPanel');if(panel.open)return;panel.showModal();$('toggleTraceTargets').setAttribute('aria-expanded','true');$('traceTargetInput').focus({preventScroll:true});
+  const panel=$('traceTargetPanel');if(panel.open)return;panel.showModal();keepTraceTargetPanelVisible();$('toggleTraceTargets').setAttribute('aria-expanded','true');$('traceTargetInput').focus({preventScroll:true});
  });
  function add(){
   const input=$('traceTargetInput');
@@ -640,6 +649,7 @@ function setupTraceTargets(){
   catch(error){traceTargetFeedback('追加できません：'+error.message,true);}
   input.focus({preventScroll:true});
  }
+ $('showTraceExecution').addEventListener('change',()=>{showTraceExecution=$('showTraceExecution').checked;render();});
  $('closeTraceTargets').addEventListener('click',()=>$('traceTargetPanel').close());
  $('traceTargetPanel').addEventListener('close',()=>{$('toggleTraceTargets').setAttribute('aria-expanded','false');$('toggleTraceTargets').focus({preventScroll:true});});
  $('addTraceTarget').addEventListener('click',add);
@@ -647,20 +657,59 @@ function setupTraceTargets(){
  $('resetTraceTargets').addEventListener('click',()=>{resetTraceTargets();traceTargetFeedback('コード内の変数をすべて表示します。');render();});
 }
 
+let traceTargetPosition=null;
+function clampTraceTargetPosition(x,y,width,height,viewportWidth,viewportHeight){
+ const gap=12;
+ return {x:Math.max(gap,Math.min(x,Math.max(gap,viewportWidth-width-gap))),y:Math.max(gap,Math.min(y,Math.max(gap,viewportHeight-height-gap)))};
+}
+function placeTraceTargetPanel(x,y){
+ const panel=$('traceTargetPanel'),rect=panel.getBoundingClientRect();
+ const position=clampTraceTargetPosition(x,y,rect.width,rect.height,window.innerWidth,window.innerHeight);
+ panel.style.margin='0';panel.style.inset='auto';panel.style.left=position.x+'px';panel.style.top=position.y+'px';traceTargetPosition=position;
+}
+function keepTraceTargetPanelVisible(){
+ if($('traceTargetPanel').open&&traceTargetPosition)placeTraceTargetPanel(traceTargetPosition.x,traceTargetPosition.y);
+}
+function setupTraceTargetDragging(){
+ const bar=$('traceTargetTitlebar'),panel=$('traceTargetPanel');let drag=null;
+ bar.addEventListener('pointerdown',event=>{
+  if(event.button!==0||event.target.closest('button'))return;
+  const rect=panel.getBoundingClientRect();drag={id:event.pointerId,offsetX:event.clientX-rect.left,offsetY:event.clientY-rect.top};
+  placeTraceTargetPanel(rect.left,rect.top);bar.setPointerCapture(event.pointerId);bar.classList.add('is-dragging');event.preventDefault();
+ });
+ bar.addEventListener('pointermove',event=>{
+  if(!drag||event.pointerId!==drag.id)return;
+  placeTraceTargetPanel(event.clientX-drag.offsetX,event.clientY-drag.offsetY);
+ });
+ function finish(event){if(!drag||event.pointerId!==drag.id)return;const id=drag.id;drag=null;bar.classList.remove('is-dragging');if(bar.hasPointerCapture(id))bar.releasePointerCapture(id);}
+ bar.addEventListener('pointerup',finish);bar.addEventListener('pointercancel',finish);bar.addEventListener('lostpointercapture',finish);
+ bar.addEventListener('keydown',event=>{
+  if(event.target.closest('button')||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;
+  event.preventDefault();const rect=panel.getBoundingClientRect(),distance=event.shiftKey?40:10;
+  placeTraceTargetPanel(rect.left+(event.key==='ArrowLeft'?-distance:event.key==='ArrowRight'?distance:0),rect.top+(event.key==='ArrowUp'?-distance:event.key==='ArrowDown'?distance:0));
+ });
+ window.addEventListener('resize',keepTraceTargetPanelVisible);
+}
+function traceTableColumnWidths(available,stepWidth,wanted,showContent){
+ const step=Math.min(stepWidth,(wanted.length||showContent)?available*.35:available);
+ const total=wanted.reduce((sum,width)=>sum+width,0);
+ if(!showContent){if(!wanted.length)return [available];const room=available-step;return [step,...wanted.map(width=>room*width/total)];}
+ const minimumContent=Math.min(240,Math.max(80,available*.4));
+ const reserve=Math.min(minimumContent,Math.max(80,available-step-56*wanted.length)),budget=Math.max(0,available-step-reserve);
+ let widths=wanted;
+ if(total>budget&&wanted.length){const minimum=Math.min(56,budget/wanted.length),extra=Math.max(0,budget-minimum*wanted.length),weights=wanted.map(width=>Math.max(1,width-minimum)),sum=weights.reduce((a,b)=>a+b,0);widths=weights.map(weight=>minimum+extra*weight/sum);}
+ return [step,...widths,Math.max(1,available-step-widths.reduce((a,b)=>a+b,0))];
+}
+
 function fitTraceColumns(){
  const table=$('historyScroll').querySelector('table'),available=$('historyScroll').clientWidth;if(!available)return;
- const names=traceColumnNames();
- const canvas=fitTraceColumns.canvas||(fitTraceColumns.canvas=document.createElement('canvas')),ctx=canvas.getContext('2d'),style=getComputedStyle(table);
+ const names=traceColumnNames(),canvas=fitTraceColumns.canvas||(fitTraceColumns.canvas=document.createElement('canvas')),ctx=canvas.getContext('2d'),style=getComputedStyle(table);
  ctx.font='700 '+style.fontSize+' '+style.fontFamily;const measure=text=>ctx.measureText(String(text)).width;
  const stepWidth=Math.ceil(Math.max(measure('ステップ'),measure(Math.max(1,steps.length-1)))+24);
- // 全ステップの値を測り、実行中に列の幅が変わらないようにする。
  const wanted=names.map(name=>Math.max(64,Math.min(168,Math.ceil(Math.max(measure(name),...steps.map(step=>measure(traceTargetText(step,name))))+32))));
- const contentMinimum=Math.min(240,Math.max(80,available*.4)),reserve=Math.min(contentMinimum,Math.max(80,available-stepWidth-56*names.length)),budget=Math.max(0,available-stepWidth-reserve),total=wanted.reduce((sum,w)=>sum+w,0);
- let widths=wanted;
- if(total>budget&&names.length){const minimum=Math.min(56,budget/names.length),extra=Math.max(0,budget-minimum*names.length),weights=wanted.map(width=>Math.max(1,width-minimum)),sum=weights.reduce((a,b)=>a+b,0);widths=weights.map(weight=>minimum+extra*weight/sum);}
- const contentWidth=Math.max(1,available-stepWidth-widths.reduce((a,b)=>a+b,0));
+ const widths=traceTableColumnWidths(available,stepWidth,wanted,showTraceExecution);
  let group=table.querySelector('colgroup');if(!group){group=document.createElement('colgroup');table.prepend(group);}
- group.replaceChildren(...[stepWidth,...widths,contentWidth].map(width=>{const column=document.createElement('col');column.style.width=width+'px';return column;}));
+ group.replaceChildren(...widths.map(width=>{const column=document.createElement('col');column.style.width=width+'px';return column;}));
 }
 function observeTraceWidth(){
  new ResizeObserver(fitTraceColumns).observe($('historyScroll'));
@@ -671,12 +720,12 @@ function message(m,type=''){ $('msg').className='status '+type;$('msg').textCont
 function fileFeedback(m,type='error'){$('fileFeedback').className='file-feedback '+type;$('fileFeedback').textContent=m}
 function clearFileFeedback(){$('fileFeedback').className='file-feedback hidden';$('fileFeedback').textContent=''}
 function compile(){hideCompletions();clearEditorIssue();try{preflightCode($('source').value);let result=buildSteps($('source').value);steps=result.trace;lines=result.raw;index=0;lastSource=$('source').value;message('✓ 解析完了。'+(steps.length-1)+'ステップで実行できます。','success');render()}catch(e){steps=[];lines=$('source').value.replace(/\r/g,'').split('\n');index=0;lastSource='';showEditorIssue(e);message('⚠ '+(editorIssue.line?editorIssue.line+'行目を確認してください。':'コードを確認してください。')+'コード欄の下にヒントを表示しています。','error');render()}}
-function render(){syncEditorHighlight();let s=steps[index]||{vars:{},changed:[],output:[],line:0,text:'開始前'};let next=steps[index+1];$('codeView').innerHTML=lines.map((line,i)=>`<div class="line ${s.line===i+1?'done':''} ${next&&next.line===i+1?'active':''} ${editorIssue&&editorIssue.line===i+1?'source-error':''}"><span class="num">${i+1}</span><span class="src">${syntaxLine(line)||' '}</span></div>`).join('');revealCodeLine();$('outputText').textContent=s.output.join('\n');renderGraphs(s.graphs||[]);$('executionOutput').classList.toggle('hidden',s.output.length===0&&!(s.graphs||[]).length);$('graphHelp').classList.toggle('hidden',!lines.some(line=>line.trim()==='import matplotlib.pyplot as plt'));let names=Object.keys(s.vars).sort();$('varsHead').innerHTML='<tr>'+names.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'</tr>';$('vars').innerHTML='<tr>'+names.map(k=>'<td class="'+(s.changed.includes(k)?'changedCell':'')+'">'+escapeHTML(format(s.vars[k]))+'</td>').join('')+'</tr>';$('emptyVars').classList.toggle('hidden',names.length>0);renderTraceTargets();let traceNames=traceColumnNames();$('traceHead').innerHTML='<tr><th>ステップ</th>'+traceNames.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'<th>実行内容</th></tr>';$('history').innerHTML=steps.slice(1,index+1).map((t,i)=>'<tr class="'+(i+1===index?'current':'')+'"><td>'+(i+1)+'</td>'+traceNames.map(k=>traceTargetCell(t,steps[i],k)).join('')+'<td>'+escapeHTML(t.text)+'</td></tr>').join('');fitTraceColumns();$('prev').disabled=index===0;const canCompile=!editorIssue&&$('source').value.trim()&&$('source').value!==lastSource;$('next').disabled=!next&&!canCompile;$('all').disabled=!next&&!canCompile;$('position').textContent=editorIssue?'コードを確認してください':!steps.length?'':index+' / '+Math.max(0,steps.length-1)+' ステップ'+(next?'':' · 終了');}
+function render(){syncEditorHighlight();let s=steps[index]||{vars:{},changed:[],output:[],line:0,text:'開始前'};let next=steps[index+1];$('codeView').innerHTML=lines.map((line,i)=>`<div class="line ${s.line===i+1?'done':''} ${next&&next.line===i+1?'active':''} ${editorIssue&&editorIssue.line===i+1?'source-error':''}"><span class="num">${i+1}</span><span class="src">${syntaxLine(line)||' '}</span></div>`).join('');revealCodeLine();$('outputText').textContent=s.output.join('\n');renderGraphs(s.graphs||[]);$('executionOutput').classList.toggle('hidden',s.output.length===0&&!(s.graphs||[]).length);$('graphHelp').classList.toggle('hidden',!lines.some(line=>line.trim()==='import matplotlib.pyplot as plt'));let names=Object.keys(s.vars).sort();$('varsHead').innerHTML='<tr>'+names.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'</tr>';$('vars').innerHTML='<tr>'+names.map(k=>'<td class="'+(s.changed.includes(k)?'changedCell':'')+'">'+escapeHTML(format(s.vars[k]))+'</td>').join('')+'</tr>';$('emptyVars').classList.toggle('hidden',names.length>0);renderTraceTargets();let traceNames=traceColumnNames();$('traceHead').innerHTML='<tr><th>ステップ</th>'+traceNames.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+(showTraceExecution?'<th>実行内容</th>':'')+'</tr>';$('history').innerHTML=steps.slice(1,index+1).map((t,i)=>'<tr class="'+(i+1===index?'current':'')+'"><td>'+(i+1)+'</td>'+traceNames.map(k=>traceTargetCell(t,steps[i],k)).join('')+(showTraceExecution?'<td>'+escapeHTML(t.text)+'</td>':'')+'</tr>').join('');fitTraceColumns();$('prev').disabled=index===0;const canCompile=!editorIssue&&$('source').value.trim()&&$('source').value!==lastSource;$('next').disabled=!next&&!canCompile;$('all').disabled=!next&&!canCompile;$('position').textContent=editorIssue?'コードを確認してください':!steps.length?'':index+' / '+Math.max(0,steps.length-1)+' ステップ'+(next?'':' · 終了');}
 function step(){if($('source').value!==lastSource)compile();if(index<steps.length-1){index++;render()}}
 $('reset').addEventListener('click',compile);$('prev').addEventListener('click',()=>{if(index>0){index--;render()}});$('next').addEventListener('click',step);$('all').addEventListener('click',()=>{if($('source').value!==lastSource)compile();if(steps.length){index=steps.length-1;render()}});$('sample').addEventListener('change',()=>{if(!$('sample').value)return;$('source').value=samples[$('sample').value];currentFileName=$('sample').selectedOptions[0].textContent;updateOpenedName();$('sample').value='';compile()});$('newCode').addEventListener('click',()=>{hideSaveChoices();hideCompletions();clearEditorIssue();clearFileFeedback();if($('source').value.trim()&&!confirm('新規作成しますか？ 現在のコードとトレース履歴は消去されます。'))return;currentFileName='';$('source').value='';updateOpenedName();$('openedName').focus();$('sample').selectedIndex=-1;steps=[];index=0;lines=[];lastSource='';$('source').focus();render();message('プログラム名を入力してから、Pythonコードを作成してください。');});function exportRows(){
  let names=traceColumnNames();
- let rows=[['ステップ',...names,'実行内容']];
- steps.slice(1,index+1).forEach((s,i)=>rows.push([String(i+1),...names.map(k=>traceTargetText(s,k)),s.text]));
+ let rows=[['ステップ',...names,...(showTraceExecution?['実行内容']:[])]];
+ steps.slice(1,index+1).forEach((s,i)=>rows.push([String(i+1),...names.map(k=>traceTargetText(s,k)),...(showTraceExecution?[s.text]:[])]));
  return rows;
 }
 function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
@@ -729,8 +778,8 @@ function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;
   $('source').value.replace(/\r/g,'').split('\n').forEach((text,i)=>line(String(i+1).padStart(3,' ')+'  '+text));
   if(index>0){
    line('');line('[トレース表（ステップ '+index+' まで）]');
-   const columns=rows[0].length,totalWidth=width-margin*2,stepWidth=80,contentWidth=columns>2?totalWidth*.4:totalWidth-stepWidth;
-   const widths=rows[0].map((_,i)=>i===0?stepWidth:i===columns-1?contentWidth:(totalWidth-stepWidth-contentWidth)/(columns-2));
+   const columns=rows[0].length,totalWidth=width-margin*2,hasExecution=rows[0].at(-1)==='実行内容',stepWidth=columns===1?totalWidth:80,dataColumns=columns-1-(hasExecution?1:0),contentWidth=hasExecution?(dataColumns?totalWidth*.4:totalWidth-stepWidth):0;
+   const widths=rows[0].map((_,i)=>i===0?stepWidth:hasExecution&&i===columns-1?contentWidth:(totalWidth-stepWidth-contentWidth)/dataColumns);
    page.ctx.font='18px system-ui, sans-serif';
    function row(cells,header=false){
     const wrapped=cells.map((text,i)=>wrap(text,Math.max(8,widths[i]-16))),count=Math.max(...wrapped.map(parts=>parts.length));

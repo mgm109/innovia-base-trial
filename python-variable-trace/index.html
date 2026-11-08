@@ -239,16 +239,29 @@ const $=id=>document.getElementById(id);
 const samples={basic:'x = 3\ny = 2\nx = x + y\ny = x * 2\nprint(y)',loop:'total = 0\nfor i in range(1, 5):\n    total = total + i\nprint(total)',branch:'score = 75\nif score >= 80:\n    result = "合格"\nelse:\n    result = "もう少し"\nprint(result)',while:'n = 1\nwhile n < 10:\n    n = n * 2\nprint(n)',nested:'total = 0\nfor i in range(1, 6):\n    if i % 2 == 0:\n        total = total + i\nprint(total)'};
 Object.assign(samples,{"graphLine":"import matplotlib.pyplot as plt\n\nx = [1, 2, 3, 4, 5]\ny = [2, 4, 3, 7, 6]\nplt.plot(x, y)\nplt.title(\"変化を折れ線で見る\")\nplt.xlabel(\"回数\")\nplt.ylabel(\"値\")\nplt.show()","graphBar":"import matplotlib.pyplot as plt\n\nlabels = [\"A\", \"B\", \"C\", \"D\"]\nvalues = [3, 7, 5, 4]\nplt.bar(labels, values)\nplt.title(\"値を棒グラフで比べる\")\nplt.xlabel(\"項目\")\nplt.ylabel(\"値\")\nplt.show()"});
 let steps=[],index=0,lines=[],lastSource='';
-let runtimeInputs=[],pendingInput=null,continueAll=false;
+let runtimeInputs=[],pendingInput=null,continueAll=false,traceSeed=2463534242;
 function format(v){if(Array.isArray(v))return '['+v.map(format).join(', ')+']';if(typeof v==='string')return JSON.stringify(v);if(typeof v==='boolean')return v?'True':'False';if(v===null)return 'None';return String(v)}
 function reprVars(v){return Object.keys(v).sort().map(k=>k+'='+format(v[k])).join(', ')||'—'}
 function same(a,b){return JSON.stringify(a)===JSON.stringify(b)}
-function tokenize(s){let out=[],re=/\s+|(?:\d+(?:\.\d*)?|\.\d+)|(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(?:==|!=|<=|>=|\/\/|\*\*)|[A-Za-z_]\w*|./gy,m;while((m=re.exec(s))){let t=m[0];if(/^\s+$/.test(t))continue;if(!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(t)&&!/^['"]/.test(t)&&!/^(?:==|!=|<=|>=|\/\/|\*\*|[A-Za-z_]\w*|[+*\/%()\[\]\-,<>])$/.test(t))throw Error('未対応の記号: '+t);out.push(t)}return out}
+function tokenize(s){let out=[],re=/\s+|(?:\d+(?:\.\d*)?|\.\d+)|(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(?:==|!=|<=|>=|\/\/|\*\*)|[A-Za-z_]\w*|./gy,m;while((m=re.exec(s))){let t=m[0];if(/^\s+$/.test(t))continue;if(!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(t)&&!/^['"]/.test(t)&&!/^(?:==|!=|<=|>=|\/\/|\*\*|[A-Za-z_]\w*|[+*\/%()\[\]\-,<>.])$/.test(t))throw Error('未対応の記号: '+t);out.push(t)}return out}
 function truth(v){return Array.isArray(v)?v.length>0:Boolean(v)}
-function expr(s,env,execute=true,readInput){
+function expr(s,env,execute=true,runtime){
  const ts=tokenize(s);let p=0;
  const prec={'or':1,'and':2,'==':3,'!=':3,'<':3,'>':3,'<=':3,'>=':3,'+':4,'-':4,'*':5,'/':5,'//':5,'%':5,'**':7};
  const peek=()=>ts[p],take=()=>ts[p++];
+ function callArgs(execute){
+  take();
+  const args=[];
+  if(peek()!==')'){
+   while(true){
+    args.push(parse(0,execute));
+    if(peek()!==',')break;
+    take();if(peek()===')')break;
+   }
+  }
+  if(take()!==')')throw Error(') が必要です');
+  return args;
+ }
  // Parse skipped operands too, but do not evaluate their names or arithmetic.
  function parse(min=0,execute=true){
   const t=take();let lhs;
@@ -266,24 +279,35 @@ function expr(s,env,execute=true,readInput){
   else if(t==='True'){if(execute)lhs=true;}
   else if(t==='False'){if(execute)lhs=false;}
   else if(t==='None'){if(execute)lhs=null;}
-  else if(t==='input'&&peek()==='('&&readInput&&!Object.prototype.hasOwnProperty.call(env,t)){
-   take();
-   const prompt=peek()===')'?'':parse(0,execute);
-   if(peek()===',')take();
-   if(take()!==')')throw Error('inputには入力を促すメッセージを1つまで指定できます');
-   if(execute)lhs=readInput(formatPrint(prompt));
-  }
-  else if(t==='len'&&peek()==='('&&!Object.prototype.hasOwnProperty.call(env,t)){
-   take();const args=[];
-   if(peek()!==')'){while(true){args.push(parse(0,execute));if(peek()!==',')break;take();if(peek()===')')break;}}
-   if(take()!==')')throw Error(') が必要です');
-   if(execute){if(args.length!==1)throw Error('lenにはリストまたは文字列を1つ指定してください');const value=args[0];if(!Array.isArray(value)&&typeof value!=='string')throw Error('lenにはリストまたは文字列を指定してください');lhs=typeof value==='string'?Array.from(value).length:value.length;}
-  }
   else if(/^[A-Za-z_]\w*$/.test(t)&&!['and','or'].includes(t)){
-   if(execute){if(!Object.prototype.hasOwnProperty.call(env,t))throw Error('未定義の変数: '+t);lhs=env[t];}
+   if(peek()==='.'){
+    take();const member=take();
+    if(!/^[A-Za-z_]\w*$/.test(member||''))throw Error('名前を確認してください');
+    lhs=traceMember(runtime,env,t,member,peek()==='('?callArgs(execute):null,execute);
+   }else if(peek()==='('){
+    const builtin=traceBuiltins.has(t)||(t==='input'&&runtime);
+    const userFunction=runtime?.functions.has(t)||(!builtin&&runtime?.functionNames.has(t));
+    if(t in env||(!builtin&&!userFunction))throw Error('未対応の関数: '+t);
+    const args=callArgs(execute);
+    if(t==='input'&&!userFunction){
+     checkArity('input',args,0,1);
+     if(execute)lhs=runtime.readInput(args.length?formatPrint(args[0]):'');
+    }else if(userFunction){
+     if(execute)lhs=runtime.invoke(t,args);
+    }else lhs=traceBuiltin(t,args,execute);
+   }else if(execute){
+    lhs=traceVariable(env,t);
+   }
   }
   else throw Error('式に使えない記号: '+t);
-  while(peek()==='['){
+  while(peek()==='['||peek()==='.'){
+   if(peek()==='.'){
+    take();const member=take();
+    if(!runtime||(!traceListMethods.has(member)&&!traceStringMethods.has(member))||peek()!=='(')throw Error('未対応の関数: '+member);
+    const args=callArgs(execute);
+    if(execute)lhs=traceValueMethod(lhs,member,args);
+    continue;
+   }
    take();const subscript=parse(0,execute);if(take()!==']')throw Error('] が必要です');
    if(execute){
     if(!Array.isArray(lhs)&&typeof lhs!=='string')throw Error('添字で値を取り出せるのはリストまたは文字列です');
@@ -298,45 +322,249 @@ function expr(s,env,execute=true,readInput){
    const op=take(),skip=execute&&((op==='and'&&!truth(lhs))||(op==='or'&&truth(lhs)));
    const v=parse(prec[op]+(op==='**'?0:1),execute&&!skip);
    if(!execute||skip)continue;
-   if((Array.isArray(lhs)||Array.isArray(v))&&!['and','or','==','!=','+'].includes(op))throw Error("この演算にはリストを使えません");
-   switch(op){
-    // Python and/or return the selected operand, rather than a Boolean cast.
-    case 'or':case 'and':lhs=v;break;
-    case '==':lhs=Array.isArray(lhs)&&Array.isArray(v)?same(lhs,v):lhs===v;break;case '!=':lhs=Array.isArray(lhs)&&Array.isArray(v)?!same(lhs,v):lhs!==v;break;
-    case '<':lhs=lhs<v;break;case '>':lhs=lhs>v;break;case '<=':lhs=lhs<=v;break;case '>=':lhs=lhs>=v;break;
-    case '+':if(Array.isArray(lhs)||Array.isArray(v)){if(!Array.isArray(lhs)||!Array.isArray(v))throw Error('リスト同士を足してください');if(lhs.length+v.length>100)throw Error('リストは100個までです');lhs=lhs.concat(v);}else lhs=lhs+v;break;case '-':lhs=lhs-v;break;case '*':lhs=lhs*v;break;
-    case '/':if(v===0)throw Error('0で割ることはできません');lhs=lhs/v;break;
-    case '//':if(v===0)throw Error('0で割ることはできません');lhs=Math.floor(lhs/v);break;
-    case '%':if(v===0)throw Error('0で割ることはできません');lhs=((lhs%v)+v)%v;break;
-    case '**':lhs=lhs**v;break;
-   }
-   if(typeof lhs==='number'&&!Number.isFinite(lhs))throw Error('計算結果が大きすぎます');
+   lhs=applyTraceOperator(op,lhs,v);
   }
   return lhs;
  }
  const result=parse(0,execute);if(p!==ts.length)throw Error('式を読み取れません: '+ts.slice(p).join(' '));return result;
 }
+function applyTraceOperator(op,lhs,v){
+ if((Array.isArray(lhs)||Array.isArray(v))&&!['and','or','==','!=','+'].includes(op))throw Error("この演算にはリストを使えません");
+ switch(op){
+  // Python and/or return the selected operand, rather than a Boolean cast.
+  case 'or':case 'and':lhs=v;break;
+  case '==':lhs=Array.isArray(lhs)&&Array.isArray(v)?same(lhs,v):lhs===v;break;case '!=':lhs=Array.isArray(lhs)&&Array.isArray(v)?!same(lhs,v):lhs!==v;break;
+  case '<':lhs=lhs<v;break;case '>':lhs=lhs>v;break;case '<=':lhs=lhs<=v;break;case '>=':lhs=lhs>=v;break;
+  case '+':if(Array.isArray(lhs)||Array.isArray(v)){if(!Array.isArray(lhs)||!Array.isArray(v))throw Error('リスト同士を足してください');if(lhs.length+v.length>100)throw Error('リストは100個までです');lhs=lhs.concat(v);}else lhs=lhs+v;break;case '-':lhs=lhs-v;break;case '*':lhs=lhs*v;break;
+  case '/':if(v===0)throw Error('0で割ることはできません');lhs=lhs/v;break;
+  case '//':if(v===0)throw Error('0で割ることはできません');lhs=Math.floor(lhs/v);break;
+  case '%':if(v===0)throw Error('0で割ることはできません');lhs=((lhs%v)+v)%v;break;
+  case '**':lhs=lhs**v;break;
+ }
+ if(typeof lhs==='number'&&!Number.isFinite(lhs))throw Error('計算結果が大きすぎます');
+ return lhs;
+}
+const traceBuiltins=new Set(['len','int','float','str','bool','abs','sum','min','max','sorted','bin','oct','hex']);
+const traceUnbound=Symbol('unbound');
+const traceListMethods=new Set(['append','pop','count','index','sort','reverse']);
+const traceStringMethods=new Set(['strip','split','lower','upper','count','index']);
+const traceModuleMethods=new Map([
+ ['random',new Set(['random','randint','randrange','choice'])],
+ ['math',new Set(['sqrt','floor','ceil','sin','cos','tan','log'])]
+]);
+function checkArity(name,args,min,max=min){
+ if(args.length<min||args.length>max){
+  const count=min===max?String(min):min+'～'+max;
+  throw Error(name+' の引数は '+count+' 個です');
+ }
+}
+function finiteNumber(value){
+ if(typeof value==='boolean')return Number(value);
+ if(typeof value!=='number'||!Number.isFinite(value))throw Error('数値を指定してください');
+ return value;
+}
+function traceVariable(env,name){
+ if(!(name in env)||env[name]===traceUnbound)throw Error('未定義の変数: '+name);
+ return env[name];
+}
+function safeInteger(value){
+ const number=finiteNumber(value);
+ if(!Number.isSafeInteger(number))throw Error('このアプリで扱える範囲の整数を指定してください');
+ return number;
+}
+function iterableValues(value){
+ if(Array.isArray(value))return value;
+ if(typeof value==='string')return Array.from(value);
+ throw Error('リストまたは文字列を指定してください');
+}
+function compareTraceValues(left,right){
+ if(typeof left==='string'&&typeof right==='string')return left<right?-1:left>right?1:0;
+ return finiteNumber(left)-finiteNumber(right);
+}
+function toTraceInteger(value,base){
+ if(typeof value!=='string'){
+  if(base!==undefined)throw Error('進数を指定するときは文字列を渡してください');
+  return safeInteger(Math.trunc(finiteNumber(value)));
+ }
+ let text=value.trim().toLowerCase(),sign=1;
+ if(/^[+-]/.test(text)){if(text[0]==='-')sign=-1;text=text.slice(1);}
+ let radix=base===undefined?10:safeInteger(base);
+ if(radix!==0&&(radix<2||radix>36))throw Error('進数は 0 または 2～36 を指定してください');
+ const prefix={b:2,o:8,x:16}[text[1]];
+ if(text[0]==='0'&&prefix&&(radix===0||radix===prefix)){radix=prefix;text=text.slice(2).replace(/^_/,'');}
+ else if(radix===0){
+  if(/^0[0-9_]*[1-9]/.test(text))throw Error('整数に変換できません');
+  radix=10;
+ }
+ if(!/^[a-z0-9]+(?:_[a-z0-9]+)*$/.test(text))throw Error('整数に変換できません');
+ let result=0;
+ for(const digit of text.replace(/_/g,'')){
+  const number=parseInt(digit,36);
+  if(number>=radix)throw Error('指定した進数の整数に変換できません');
+  result=result*radix+number;
+  if(!Number.isSafeInteger(result))throw Error('整数が大きすぎます');
+ }
+ return sign*result||0;
+}
+function traceBuiltin(name,args,execute){
+ switch(name){
+  case 'int':checkArity(name,args,0,2);break;
+  case 'float':case 'str':case 'bool':checkArity(name,args,0,1);break;
+  case 'sum':checkArity(name,args,1,2);break;
+  case 'min':case 'max':if(!args.length)throw Error(name+' には値を指定してください');break;
+  default:checkArity(name,args,1);
+ }
+ if(!execute)return;
+ const value=args[0];
+ switch(name){
+  case 'len':return iterableValues(value).length;
+  case 'int':return args.length?toTraceInteger(value,args[1]):0;
+  case 'float':{
+   if(!args.length)return 0;
+   if(typeof value!=='string')return finiteNumber(value);
+   const text=value.trim();
+   if(!/^[+-]?(?:\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?|\.\d(?:_?\d)*)(?:[eE][+-]?\d(?:_?\d)*)?$/.test(text))throw Error('実数に変換できません');
+   return finiteNumber(Number(text.replace(/_/g,'')));
+  }
+  case 'str':return args.length?formatPrint(value):'';
+  case 'bool':return args.length?truth(value):false;
+  case 'abs':return Math.abs(finiteNumber(value));
+  case 'sum':return finiteNumber(iterableValues(value).reduce((total,item)=>total+finiteNumber(item),args.length===2?finiteNumber(args[1]):0));
+  case 'min':case 'max':{
+   const values=args.length===1?iterableValues(value):args;
+   if(!values.length)throw Error('空のリストから値を選べません');
+   return values.reduce((best,item)=>(name==='min'?compareTraceValues(item,best)<0:compareTraceValues(item,best)>0)?item:best);
+  }
+  case 'sorted':return [...iterableValues(value)].sort(compareTraceValues);
+  case 'bin':case 'oct':case 'hex':{
+   const integer=safeInteger(value),[prefix,base]={bin:['0b',2],oct:['0o',8],hex:['0x',16]}[name];
+   return (integer<0?'-':'')+prefix+Math.abs(integer).toString(base);
+  }
+ }
+}
+function traceListMethod(list,name,args){
+ checkArity(name,args,name==='pop'||name==='sort'||name==='reverse'?0:1,name==='sort'||name==='reverse'?0:1);
+ switch(name){
+  case 'append':
+   if(list.length>=100)throw Error('リストは100個までです');
+   if(Array.isArray(args[0]))throw Error('入れ子のリストには対応していません');
+   list.push(args[0]);return null;
+  case 'pop':{
+   const index=args.length?safeInteger(args[0]):-1,offset=index<0?list.length+index:index;
+   if(offset<0||offset>=list.length)throw Error('添字が範囲外です: '+index);
+   return list.splice(offset,1)[0];
+  }
+  case 'sort':list.sort(compareTraceValues);return null;
+  case 'reverse':list.reverse();return null;
+  case 'count':return list.filter(value=>same(value,args[0])).length;
+  case 'index':{
+   const index=list.findIndex(value=>same(value,args[0]));
+   if(index<0)throw Error('指定した値がリストにありません');
+   return index;
+  }
+ }
+}
+function traceStringMethod(text,name,args){
+ checkArity(name,args,name==='count'||name==='index'?1:0,name==='split'||name==='count'||name==='index'?1:0);
+ switch(name){
+  case 'strip':return text.trim();
+  case 'lower':return text.toLowerCase();
+  case 'upper':return text.toUpperCase();
+  case 'split':{
+   if(args.length&&args[0]!==null&&(typeof args[0]!=='string'||!args[0]))throw Error('区切り文字は空でない文字列を指定してください');
+   const parts=args.length&&args[0]!==null?text.split(args[0]):text.trim().split(/\s+/).filter(Boolean);
+   if(parts.length>100)throw Error('リストは100個までです');
+   return parts;
+  }
+  case 'count':case 'index':{
+   const needle=args[0];
+   if(typeof needle!=='string')throw Error('文字列を指定してください');
+   if(name==='count')return needle?text.split(needle).length-1:Array.from(text).length+1;
+   const found=text.indexOf(needle);
+   if(found<0)throw Error('指定した文字列がありません');
+   return Array.from(text.slice(0,found)).length;
+  }
+ }
+}
+function traceValueMethod(value,name,args){
+ if(Array.isArray(value)&&traceListMethods.has(name))return traceListMethod(value,name,args);
+ if(typeof value==='string'&&traceStringMethods.has(name))return traceStringMethod(value,name,args);
+ throw Error('未対応の関数: '+name);
+}
+function traceMember(runtime,env,name,member,args,execute){
+ const fullName=name+'.'+member;
+ if(!runtime)throw Error('未対応の関数: '+fullName);
+ if(args===null){
+  if(member!=='pi'&&member!=='e')throw Error('未対応の名前: '+fullName);
+  if(!execute)return;
+  if(runtime.modules.get(name)!=='math'||name in env)throw Error('未対応の名前: '+fullName);
+  return member==='pi'?Math.PI:Math.E;
+ }
+ if(!traceListMethods.has(member)&&!traceStringMethods.has(member)&&
+  !Array.from(traceModuleMethods.values()).some(methods=>methods.has(member)))throw Error('未対応の関数: '+fullName);
+ if(!execute)return;
+ if(name in env)return traceValueMethod(traceVariable(env,name),member,args);
+ const module=runtime.modules.get(name);
+ if(!traceModuleMethods.get(module)?.has(member))throw Error('未対応の関数: '+fullName);
+ if(module==='math'){
+  checkArity(fullName,args,1,member==='log'?2:1);
+  const value=finiteNumber(args[0]);
+  const result=member==='log'&&args.length===2?Math.log(value)/Math.log(finiteNumber(args[1])):Math[member](value);
+  if(!Number.isFinite(result))throw Error(fullName+' の計算範囲を確認してください');
+  return result;
+ }
+ if(member==='random'){checkArity(fullName,args,0);return runtime.random();}
+ if(member==='choice'){
+  checkArity(fullName,args,1);
+  const values=iterableValues(args[0]);
+  if(!values.length)throw Error('空のリストから値を選べません');
+  return values[Math.floor(runtime.random()*values.length)];
+ }
+ checkArity(fullName,args,member==='randint'?2:1,member==='randint'?2:3);
+ const values=args.map(safeInteger);
+ const [start,end,step]=values.length===1?[0,values[0],1]:values.length===2?[...values,1]:values;
+ const count=member==='randint'?end-start+1:Math.ceil((end-start)/step);
+ if(!Number.isSafeInteger(count)||count<=0)throw Error(fullName+' の範囲を確認してください');
+ return start+step*Math.floor(runtime.random()*count);
+}
 function splitArgs(s){let dep=0,q='',start=0,out=[];for(let i=0;i<s.length;i++){let c=s[i];if(q){if(c==='\\')i++;else if(c===q)q='';continue}if(c==='"'||c==="'")q=c;else if(c==='('||c==='[')dep++;else if(c===')'||c===']')dep--;else if(c===','&&dep===0){out.push(s.slice(start,i).trim());start=i+1}}out.push(s.slice(start).trim());return out.filter(x=>x!=='')}
 function splitAssignment(text){
  let depth=0,quote='';
- for(let i=0;i<text.length;i++){const c=text[i];if(quote){if(c==='\\')i++;else if(c===quote)quote='';continue;}if(c==='"'||c==="'"){quote=c;continue;}if(c==='('||c==='[')depth++;else if(c===')'||c===']')depth--;else if(c==='='&&depth===0&&!'<>=!'.includes(text[i-1]||' ')&&text[i+1]!=='=')return [text,text.slice(0,i).trim(),text.slice(i+1).trim()];}
+ for(let i=0;i<text.length;i++){const c=text[i];if(quote){if(c==='\\')i++;else if(c===quote)quote='';continue;}if(c==='"'||c==="'"){quote=c;continue;}if(c==='('||c==='[')depth++;else if(c===')'||c===']')depth--;else if(c==='='&&depth===0&&!'<>=!'.includes(text[i-1]||' ')&&text[i+1]!=='='){
+  const operator=text.slice(0,i).match(/(\*\*|\/\/|[+\-*/%])$/)?.[0]||'';
+  return [text,text.slice(0,i-operator.length).trim(),text.slice(i+1).trim(),operator];
+ }}
  return null;
 }
+function assignmentSlot(target,env,evaluate){
+ const match=target.match(/^([A-Za-z_]\w*)(?:\[(.+)\])?$/),name=match[1];
+ if(match[2]===undefined)return {container:env,key:name};
+ const list=traceVariable(env,name);
+ if(!Array.isArray(list))throw Error('要素に代入できるのはリストです');
+ const index=safeInteger(evaluate(match[2],env)),offset=index<0?list.length+index:index;
+ if(offset<0||offset>=list.length)throw Error('添字が範囲外です: '+index);
+ return {container:list,key:offset};
+}
+function setAssignment(slot,value){
+ if(Array.isArray(slot.container)&&Array.isArray(value))throw Error('入れ子のリストには対応していません');
+ slot.container[slot.key]=value;
+}
 function assignValues(node,env,evaluate){
+ if(node.operator){
+  const slot=assignmentSlot(node.targets[0],env,evaluate);
+  const previous=traceVariable(slot.container,slot.key),value=evaluate(node.values[0],env);
+  if(node.operator==='+'&&Array.isArray(previous)){
+   const values=iterableValues(value);
+   if(previous.length+values.length>100)throw Error('リストは100個までです');
+   previous.push(...values);
+   setAssignment(slot,previous);
+  }else setAssignment(slot,applyTraceOperator(node.operator,previous,value));
+  return;
+ }
  let values=node.values.map(value=>evaluate(value,env));
- if(node.targets.length>1&&values.length===1){if(!Array.isArray(values[0])&&typeof values[0]!=='string')throw Error('複数の代入先には同じ個数の値を指定してください');values=Array.from(values[0]);}
+ if(node.targets.length>1&&values.length===1)values=Array.from(iterableValues(values[0]));
  if(values.length!==node.targets.length)throw Error('代入先と値の個数が一致しません');
- node.targets.forEach((target,i)=>{
-  const match=target.match(/^([A-Za-z_]\w*)(?:\[(.+)\])?$/),name=match[1];
-  if(match[2]===undefined){env[name]=values[i];return;}
-  if(!Object.prototype.hasOwnProperty.call(env,name))throw Error('未定義の変数: '+name);
-  const list=env[name];if(!Array.isArray(list))throw Error('要素に代入できるのはリストです');
-  const raw=evaluate(match[2],env),index=typeof raw==='boolean'?Number(raw):raw;
-  if(!Number.isInteger(index))throw Error('添字には整数を指定してください');
-  const offset=index<0?list.length+index:index;if(offset<0||offset>=list.length)throw Error('添字が範囲外です: '+index);
-  if(Array.isArray(values[i]))throw Error('入れ子のリストには対応していません');
-  list[offset]=values[i];
- });
+ node.targets.forEach((target,index)=>setAssignment(assignmentSlot(target,env,evaluate),values[index]));
 }
 function copyVars(env){return JSON.parse(JSON.stringify(env));}
 function stripPythonComment(line){
@@ -364,7 +592,7 @@ function parseCode(source){
   if(indent%4)throw Error(line+'行目: インデントはスペース4個単位です');
   return {text,indent,line};
  });
- function block(start,depth){let pos=start,nodes=[];
+ function block(start,depth,inFunction=false,inLoop=false){let pos=start,nodes=[];
   while(pos<ls.length){let x=ls[pos],t=x.text;
    if(!t||t.startsWith('#')){pos++;continue}
    if(x.indent<depth)break;
@@ -372,17 +600,38 @@ function parseCode(source){
    if(/^elif\b/.test(t)||t==='else:')break;
    let node={line:x.line,text:t};
    let control=t.match(/^(if|while)\s+(.+):$/);
-   let forMatch=t.match(/^for\s+([A-Za-z_]\w*)\s+in\s+range\((.*)\):$/);
-   if(control){
+   let forMatch=t.match(/^for\s+([A-Za-z_]\w*)\s+in\s+range\s*\((.*)\)\s*:$/);
+   const functionMatch=t.match(/^def\s+([A-Za-z_]\w*)\s*\(([^()]*)\)\s*:\s*$/);
+   const loopMatch=t.match(/^for\s+([A-Za-z_]\w*)\s+in\s+(.+):$/);
+   const moduleMatch=t.match(/^import\s+(random|math)(?:\s+as\s+([A-Za-z_]\w*))?$/);
+   if(functionMatch){
+    if(depth!==0)throw Error(x.line+'行目: def は行頭から書いてください');
+    const parameters=functionMatch[2].trim().replace(/,$/,'');
+    node.kind='def';node.name=functionMatch[1];
+    node.parameters=parameters?parameters.split(',').map(name=>name.trim()):[];
+    if(node.parameters.some(name=>!/^[A-Za-z_]\w*$/.test(name))||new Set(node.parameters).size!==node.parameters.length)throw Error(x.line+'行目: 関数の引数を確認してください');
+    const child=block(pos+1,depth+4,true,false);
+    if(!child.nodes.length)throw Error(x.line+'行目: ブロックが空です');
+    node.body=child.nodes;pos=child.pos;
+   }else if(moduleMatch){
+    if(depth!==0)throw Error(x.line+'行目: import は行頭から書いてください');
+    node.kind='module';node.module=moduleMatch[1];node.alias=moduleMatch[2]||node.module;pos++;
+   }else if(/^return(?:\s|$)/.test(t)){
+    if(!inFunction)throw Error(x.line+'行目: return は関数の中で使ってください');
+    node.kind='return';node.expression=t.slice(6).trim();pos++;
+   }else if(t==='break'||t==='continue'){
+    if(!inLoop)throw Error(x.line+'行目: '+t+' は繰り返しの中で使ってください');
+    node.kind=t;pos++;
+   }else if(control){
     node.kind=control[1];node.cond=control[2];
-    let child=block(pos+1,depth+4);if(!child.nodes.length)throw Error(x.line+'行目: ブロックが空です');
+    let child=block(pos+1,depth+4,inFunction,inLoop||node.kind==='while');if(!child.nodes.length)throw Error(x.line+'行目: ブロックが空です');
     node.body=child.nodes;pos=child.pos;
     if(node.kind==='if'){
      node.branches=[{cond:node.cond,body:node.body,line:x.line,text:t}];
      while(pos<ls.length){let nx=ls[pos];if(!nx.text||nx.text.startsWith('#')){pos++;continue}if(nx.indent!==depth)break;
       let elif=nx.text.match(/^elif\s+(.+):$/),isElse=nx.text==='else:';
       if(!elif&&!isElse)break;
-      let c=block(pos+1,depth+4);if(!c.nodes.length)throw Error(nx.line+'行目: ブロックが空です');
+      let c=block(pos+1,depth+4,inFunction,inLoop);if(!c.nodes.length)throw Error(nx.line+'行目: ブロックが空です');
       node.branches.push({cond:isElse?null:elif[1],body:c.nodes,line:nx.line,text:nx.text});pos=c.pos;
       if(isElse)break;
      }
@@ -390,20 +639,26 @@ function parseCode(source){
    }else if(forMatch){
     node.kind='for';node.variable=forMatch[1];node.args=splitArgs(forMatch[2]);
     if(node.args.length<1||node.args.length>3)throw Error(x.line+'行目: rangeの引数は1～3個です');
-    let c=block(pos+1,depth+4);if(!c.nodes.length)throw Error(x.line+'行目: ブロックが空です');node.body=c.nodes;pos=c.pos;
-    }else if(t==='import matplotlib.pyplot as plt'){
+    let c=block(pos+1,depth+4,inFunction,true);if(!c.nodes.length)throw Error(x.line+'行目: ブロックが空です');node.body=c.nodes;pos=c.pos;
+   }else if(loopMatch){
+    node.kind='forEach';node.variable=loopMatch[1];node.expression=loopMatch[2];
+    const child=block(pos+1,depth+4,inFunction,true);
+    if(!child.nodes.length)throw Error(x.line+'行目: ブロックが空です');
+    node.body=child.nodes;pos=child.pos;
+   }else if(t==='import matplotlib.pyplot as plt'){
     node.kind='plotImport';pos++;
    }else if(/^plt\.(plot|bar|title|xlabel|ylabel|show)\s*\(.*\)$/.test(t)){
     const command=t.match(/^plt\.(\w+)\s*\((.*)\)$/);node.kind='plot';node.method=command[1];node.args=splitArgs(command[2]);pos++;
    }else if(/^print\s*\(.*\)$/.test(t)){
     node.kind='print';node.args=splitArgs(t.replace(/^print\s*\(/,'').slice(0,-1));pos++;
    }else{
-    if(/^input\s*\(/.test(t)){
-     node.kind='input';node.expression=t;nodes.push(node);pos++;continue;
+    if(/^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)?\s*\(/.test(t)){
+     node.kind='call';node.expression=t;nodes.push(node);pos++;continue;
     }
     let assignment=splitAssignment(t);
     if(!assignment)throw Error(x.line+'行目: 対応していない文です: '+t);
-    node.kind='assign';node.targets=splitArgs(assignment[1]);node.values=splitArgs(assignment[2]);
+    node.kind='assign';node.targets=splitArgs(assignment[1]);node.values=splitArgs(assignment[2]);node.operator=assignment[3];
+    if(node.operator&&(node.targets.length!==1||node.values.length!==1))throw Error(x.line+'行目: 複合代入には代入先と値を1つずつ指定してください');
     if(!node.targets.length||!node.values.length||node.targets.some(target=>!/^([A-Za-z_]\w*)(?:\[(.+)\])?$/.test(target)))throw Error(x.line+'行目: 対応していない代入先です');
     pos++;
    }
@@ -419,12 +674,23 @@ class TraceInputRequired extends Error {
  constructor(prompt){super('入力待ち');this.prompt=prompt;}
 }
 function formatPrint(value){return typeof value==='string'?value:format(value);}
+function localBindings(nodes){
+ const names=new Set();
+ const visit=items=>{
+  for(const node of items){
+   if(node.kind==='assign')for(const target of node.targets)if(!target.includes('['))names.add(target);
+   if(node.variable)names.add(node.variable);
+   if(node.branches)for(const branch of node.branches)visit(branch.body);
+   else if(node.body)visit(node.body);
+  }
+ };
+ visit(nodes);
+ return names;
+}
 
-// Once an input pauses execution, check the expressions beyond that point without
-// guessing which value will be entered or which branch will run.
-function validateInputSyntax(nodes){
+function validateInputSyntax(nodes,runtime){
  const check=(expressions,line)=>{
-  try{for(const expression of expressions)expr(expression,{},false,()=>{});}
+  try{for(const expression of expressions)expr(expression,Object.create(null),false,runtime);}
   catch(error){throw Error(line+'行目: '+error.message);}
  };
  for(const node of nodes){
@@ -434,85 +700,133 @@ function validateInputSyntax(nodes){
   if(node.branches){
    for(const branch of node.branches){
     if(branch.cond!==null)check([branch.cond],branch.line);
-    validateInputSyntax(branch.body);
+    validateInputSyntax(branch.body,runtime);
    }
   }else{
    if(node.cond)check([node.cond],node.line);
-   if(node.body)validateInputSyntax(node.body);
+   if(node.body)validateInputSyntax(node.body,runtime);
   }
  }
 }
-function buildSteps(source,inputs=[]){
- const ast=parseCode(source),env={},output=[],graphs=[];
+function buildSteps(source,inputs=[],seed=2463534242){
+ const ast=parseCode(source),globals=Object.create(null),output=[],graphs=[];
+ const functions=new Map(),modules=new Map();
+ const functionNames=new Set(ast.nodes.filter(node=>node.kind==='def').map(node=>node.name));
  const plotting={imported:false,figure:{series:[],title:'',xlabel:'',ylabel:''}};
  const trace=[{line:0,text:'開始前',vars:{},output:[],graphs:[],changed:[]}];
- let inputIndex=0;
- const evaluate=(expression,variables)=>expr(expression,variables,true,prompt=>{
-  if(inputIndex===inputs.length)throw new TraceInputRequired(prompt);
-  return inputs[inputIndex++];
- });
- function record(line,text,previous){
+ let inputIndex=0,callDepth=0,randomState=(seed>>>0)||2463534242;
+ const runtime={
+  functionNames,functions,modules,
+  readInput(prompt){
+   if(inputIndex===inputs.length)throw new TraceInputRequired(prompt);
+   return inputs[inputIndex++];
+  },
+  random(){
+   randomState^=randomState<<13;
+   randomState^=randomState>>>17;
+   randomState^=randomState<<5;
+   return (randomState>>>0)/4294967296;
+  },
+  invoke(name,args){
+   const fn=functions.get(name);
+   if(!fn)throw Error('関数を呼び出す前に定義してください: '+name);
+   checkArity(name,args,fn.parameters.length);
+   if(callDepth>=32)throw Error('関数の呼び出しが深すぎます');
+   const scope=Object.create(globals);
+   for(const local of fn.locals)scope[local]=traceUnbound;
+   fn.parameters.forEach((param,i)=>{scope[param]=args[i];});
+   callDepth++;
+   try{
+    const control=run(fn.body,scope);
+    return control?.value??null;
+   }finally{callDepth--;}
+  }
+ };
+ const evaluate=(expression,env)=>expr(expression,env,true,runtime);
+ const snapshot=env=>copyVars(env===globals?env:{...globals,...env});
+ function record(line,text,previous,env){
   if(trace.length>500)throw Error('500ステップを超えました。無限ループなどを確認してください');
-  const changed=Object.keys(env).filter(key=>!same(env[key],previous[key]));
-  trace.push({line,text,vars:copyVars(env),output:[...output],graphs:[...graphs],changed});
+  const vars=snapshot(env);
+  const changed=Object.keys(vars).filter(key=>!same(vars[key],previous[key]));
+  trace.push({line,text,vars,output:[...output],graphs:[...graphs],changed});
  }
- function run(nodes){
+ function run(nodes,env){
   for(const node of nodes){
-   const previous=copyVars(env);
+   const previous=snapshot(env);
    let line=node.line;
    try{
     if(node.kind==='assign'){
      assignValues(node,env,evaluate);
-     record(line,node.text,previous);
-    }else if(node.kind==='input'){
+    }else if(node.kind==='call'){
      evaluate(node.expression,env);
-     record(line,node.text,previous);
     }else if(node.kind==='print'){
      output.push(node.args.map(arg=>formatPrint(evaluate(arg,env))).join(' '));
-     record(line,node.text,previous);
     }else if(node.kind==='plotImport'||node.kind==='plot'){
      plotCommand(node,env,plotting,graphs,evaluate);
-     record(line,node.text,previous);
+    }else if(node.kind==='module'){
+     modules.set(node.alias,node.module);
+     delete globals[node.alias];
+    }else if(node.kind==='def'){
+     node.locals=localBindings(node.body);
+     functions.set(node.name,node);
+     delete globals[node.name];
+    }else if(node.kind==='return'||node.kind==='break'||node.kind==='continue'){
+     const value=node.expression?evaluate(node.expression,env):null;
+     record(line,node.text,previous,env);
+     return {kind:node.kind,value};
     }else if(node.kind==='if'){
      for(const branch of node.branches){
       line=branch.line;
       const matches=branch.cond===null||truth(evaluate(branch.cond,env));
-      record(line,branch.text,previous);
-      if(matches){run(branch.body);break;}
+      record(line,branch.text,previous,env);
+      if(matches){
+       const control=run(branch.body,env);
+       if(control)return control;
+       break;
+      }
      }
+     continue;
     }else if(node.kind==='while'){
-     let count=0;
      while(true){
       const matches=truth(evaluate(node.cond,env));
-      record(line,node.text,copyVars(env));
+      record(line,node.text,snapshot(env),env);
       if(!matches)break;
-      if(++count>500)throw Error('whileの繰り返し回数が多すぎます');
-      run(node.body);
+      const control=run(node.body,env);
+      if(control?.kind==='return')return control;
+      if(control?.kind==='break')break;
      }
-    }else if(node.kind==='for'){
-     const args=node.args.map(arg=>evaluate(arg,env));
-     if(!args.every(Number.isInteger))throw Error('rangeには整数を指定してください');
-     const [start,end,step]=args.length===1?[0,args[0],1]:args.length===2?[...args,1]:args;
-     if(step===0)throw Error('rangeの増分は0にできません');
-     for(let i=start;step>0?i<end:i>end;i+=step){
-      const beforeLoop=copyVars(env);
-      env[node.variable]=i;
-      record(line,node.text,beforeLoop);
-      run(node.body);
+     continue;
+    }else if(node.kind==='for'||node.kind==='forEach'){
+     let iterable;
+     if(node.kind==='for'){
+      const args=node.args.map(arg=>safeInteger(evaluate(arg,env)));
+      const [start,end,step]=args.length===1?[0,args[0],1]:args.length===2?[...args,1]:args;
+      if(step===0)throw Error('rangeの増分は0にできません');
+      iterable=(function*(){for(let i=start;step>0?i<end:i>end;i+=step)yield i;})();
+     }else iterable=iterableValues(evaluate(node.expression,env));
+     for(const value of iterable){
+      const beforeLoop=snapshot(env);
+      env[node.variable]=value;
+      record(line,node.text,beforeLoop,env);
+      const control=run(node.body,env);
+      if(control?.kind==='return')return control;
+      if(control?.kind==='break')break;
      }
-     record(line,node.text+'（終了）',copyVars(env));
+     record(line,node.text+'（終了）',snapshot(env),env);
+     continue;
     }
+    record(line,node.text,previous,env);
    }catch(error){
-    if(error instanceof TraceInputRequired){error.line??=line;throw error;}
+    if(error instanceof TraceInputRequired){if(error.line===undefined)error.line=line;throw error;}
     if(!/^\d+行目:/.test(error.message))throw Error(line+'行目: '+error.message);
     throw error;
    }
   }
  }
- try{run(ast.nodes);}
+ try{run(ast.nodes,globals);}
  catch(error){
   if(!(error instanceof TraceInputRequired))throw error;
-  if(!inputs.length)validateInputSyntax(ast.nodes);
+  if(!inputs.length)validateInputSyntax(ast.nodes,runtime);
   return {trace,raw:ast.raw,input:{line:error.line,prompt:error.prompt}};
  }
  return {trace,raw:ast.raw,input:null};
@@ -521,6 +835,7 @@ function plotCommand(node, env, plotting, graphs, evaluate) {
  if(node.kind==='plotImport'){plotting.imported=true;return;}
  if(!plotting.imported)throw Error('先に import matplotlib.pyplot as plt を書いてください');
  const args=node.args.map(arg=>evaluate(arg,env));
+ if(node.method==='plot'&&args.length===1&&Array.isArray(args[0]))args.unshift(args[0].map((_,index)=>index));
  if(['title','xlabel','ylabel'].includes(node.method)){
   if(args.length!==1||typeof args[0]!=='string')throw Error('plt.'+node.method+' には文字列を1つ指定してください');
   if(args[0].length>120)throw Error('グラフのラベルは120文字までです');
@@ -595,6 +910,10 @@ let editorIssue=null,completionItems=[],completionIndex=0,completionRange=null,e
 const editorCommands=[
  {label:'print()',insert:'print()',back:1,kind:'命令',detail:'値や文字を表示'},
  {label:'range()',insert:'range()',back:1,kind:'命令',detail:'for の繰り返す範囲'},
+ ...['input','len','int','float','str','bool','abs','sum','min','max','sorted','bin','oct','hex'].map(name=>({label:name+'()',insert:name+'()',back:1,kind:'関数',detail:'値を入力・変換・集計'})),
+ {label:'def 関数名():',insert:'def ',kind:'関数',detail:'関数を定義する'},
+ {label:'return 値',insert:'return ',kind:'関数',detail:'呼び出した場所に値を返す'},
+ ...['break','continue'].map(name=>({label:name,insert:name,kind:'繰り返し',detail:name==='break'?'繰り返しを中断':'次の繰り返しへ進む'})),
  {label:'if 条件:',insert:'if ',kind:'条件',detail:'条件によって処理を分ける'},
  {label:'else:',insert:'else:',kind:'条件',detail:'条件に当てはまらないとき'},
  {label:'for i in range():',insert:'for i in range():',back:2,kind:'繰り返し',detail:'指定した範囲で繰り返す'},
@@ -604,8 +923,8 @@ const editorCommands=[
 ];
 const plotCommands=[['plot','折れ線グラフ','x, y'],['bar','棒グラフ','x, y'],['title','タイトル','""'],['xlabel','横軸の名前','""'],['ylabel','縦軸の名前','""'],['show','グラフを表示','']].map(([name,detail,args])=>({label:'plt.'+name+'('+args+')',insert:'plt.'+name+'()',back:1,kind:'グラフ',detail}));
 function syntaxLine(text){
- const re=/(#[^\n]*|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\b(?:import|as|if|elif|else|for|in|while|and|or|not|True|False|None)\b|\b(?:print|input|range|plt|plot|bar|title|xlabel|ylabel|show)\b|\b\d+(?:\.\d*)?\b)/g;
- let out='',end=0;for(const m of text.matchAll(re)){out+=escapeHTML(text.slice(end,m.index));const t=m[0],kind=t[0]==='#'?'comment':/^['"]/.test(t)?'string':/^\d/.test(t)?'number':/^(import|as|if|elif|else|for|in|while|and|or|not|True|False|None)$/.test(t)?'keyword':'command';out+='<span class="syntax-'+kind+'">'+escapeHTML(t)+'</span>';end=m.index+t.length;}return out+escapeHTML(text.slice(end));
+ const re=/(#[^\n]*|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\b(?:import|as|if|elif|else|for|in|while|def|return|break|continue|and|or|not|True|False|None)\b|\b(?:print|input|range|len|int|float|str|bool|abs|sum|min|max|sorted|bin|oct|hex|plt|plot|bar|title|xlabel|ylabel|show)\b|\b\d+(?:\.\d*)?\b)/g;
+ let out='',end=0;for(const m of text.matchAll(re)){out+=escapeHTML(text.slice(end,m.index));const t=m[0],kind=t[0]==='#'?'comment':/^['"]/.test(t)?'string':/^\d/.test(t)?'number':/^(import|as|if|elif|else|for|in|while|def|return|break|continue|and|or|not|True|False|None)$/.test(t)?'keyword':'command';out+='<span class="syntax-'+kind+'">'+escapeHTML(t)+'</span>';end=m.index+t.length;}return out+escapeHTML(text.slice(end));
 }
 function syncEditorHighlight(){
  const source=$('source'),current=steps[index],next=nextTraceStep(),rows=source.value.split('\n');
@@ -654,7 +973,7 @@ function preflightCode(source){
  const rows=source.replace(/\r/g,'').split('\n'),stack=[];
  for(let i=0;i<rows.length;i++){let quote='';const row=stripPythonComment(rows[i]);for(let j=0;j<row.length;j++){const c=row[j];if(quote){if(c==='\\'){j++;continue;}if(c===quote)quote='';continue;}if(c==='"'||c==="'"){quote=c;continue;}if('(['.includes(c))stack.push({char:c,line:i+1});else if(')]'.includes(c)){const open=stack.pop();if(!open||(open.char==='('?')':']')!==c)throw Object.assign(Error('対応する開き括弧がありません: '+c),{line:i+1,help:'括弧の開き方と閉じ方を確認しましょう。',symbol:c});}}
   if(quote)throw Object.assign(Error('文字列を閉じる引用符がありません'),{line:i+1,help:'文字を囲む引用符は、最初と最後を同じ記号にします。',symbol:quote});
-  const clean=row.trim();if(/^(if\s|elif\s|else\s*$|while\s|for\s)/.test(clean)&&!clean.endsWith(':'))throw Object.assign(Error('行の最後の : がありません'),{line:i+1,help:'条件分岐や繰り返しの見出しの最後を確認しましょう。',symbol:':'});
+  const clean=row.trim();if(/^(if\s|elif\s|else\s*$|while\s|for\s|def\s)/.test(clean)&&!clean.endsWith(':'))throw Object.assign(Error('行の最後の : がありません'),{line:i+1,help:'条件分岐や繰り返しの見出しの最後を確認しましょう。',symbol:':'});
  }
  if(stack.length){const open=stack.at(-1),symbol=open.char==='('?')':']';throw Object.assign(Error('閉じ括弧 '+symbol+' がありません'),{line:open.line,help:'開いた括弧と、対応する閉じ括弧を確認しましょう。',symbol});}
 }
@@ -755,7 +1074,7 @@ function traceTargetCell(step,previous,target){
 function traceSourceVariableNames(){
  const names=new Set(steps.flatMap(step=>Object.keys(step.vars)));
  try{
-  const visit=nodes=>{for(const node of nodes){if(node.kind==='assign')for(const target of node.targets){const name=target.match(/^[A-Za-z_]\w*/);if(name)names.add(name[0]);}if(node.kind==='for')names.add(node.variable);if(node.body)visit(node.body);if(node.branches)for(const branch of node.branches)visit(branch.body);}};
+  const visit=nodes=>{for(const node of nodes){if(node.kind==='assign')for(const target of node.targets){const name=target.match(/^[A-Za-z_]\w*/);if(name)names.add(name[0]);}if(node.kind==='for'||node.kind==='forEach')names.add(node.variable);if(node.parameters)node.parameters.forEach(name=>names.add(name));if(node.body)visit(node.body);if(node.branches)for(const branch of node.branches)visit(branch.body);}};
   visit(parseCode($('source').value).nodes);
  }catch{}
  return Array.from(names).sort();
@@ -1034,7 +1353,8 @@ function compile(){
  const source=$('source').value;
  try{
   preflightCode(source);
-  applyTraceResult(buildSteps(source));
+  traceSeed=Math.floor(Math.random()*4294967296);
+  applyTraceResult(buildSteps(source,[],traceSeed));
   lastSource=source;
   render();
  }catch(error){showTraceError(error);}
@@ -1066,7 +1386,7 @@ $('traceInputForm').addEventListener('submit',event=>{
  $('traceInputValue').value='';
  $('traceInputDialog').close();
  try{
-  applyTraceResult(buildSteps(lastSource,runtimeInputs));
+  applyTraceResult(buildSteps(lastSource,runtimeInputs,traceSeed));
   if(continueAll)runToEnd();
   else step();
  }catch(error){showTraceError(error);}

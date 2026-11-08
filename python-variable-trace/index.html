@@ -318,9 +318,31 @@ function assignValues(node,env){
  });
 }
 function copyVars(env){return JSON.parse(JSON.stringify(env));}
+function stripPythonComment(line){
+ let quote='';
+ for(let i=0;i<line.length;i++){
+  const char=line[i];
+  if(quote){
+   if(char==='\\')i++;
+   else if(char===quote)quote='';
+  }else if(char==='"'||char==="'"){
+   quote=char;
+  }else if(char==='#'){
+   return line.slice(0,i);
+  }
+ }
+ return line;
+}
 function parseCode(source){
  const raw=source.replace(/\r/g,'').split('\n');
- const ls=raw.map((s,i)=>{const indent=(s.match(/^ */)||[''])[0].length;if(s.includes('\t'))throw Error((i+1)+'行目: インデントにはスペースを使ってください');if(indent%4)throw Error((i+1)+'行目: インデントはスペース4個単位です');return{text:s.trim(),indent,line:i+1}});
+ const ls=raw.map((row,index)=>{
+  const code=stripPythonComment(row),text=code.trim(),line=index+1;
+  if(!text)return {text,indent:0,line};
+  const indent=code.match(/^ */)[0].length;
+  if(code.includes('\t'))throw Error(line+'行目: インデントにはスペースを使ってください');
+  if(indent%4)throw Error(line+'行目: インデントはスペース4個単位です');
+  return {text,indent,line};
+ });
  function block(start,depth){let pos=start,nodes=[];
   while(pos<ls.length){let x=ls[pos],t=x.text;
    if(!t||t.startsWith('#')){pos++;continue}
@@ -505,9 +527,9 @@ function acceptCompletion(i=completionIndex){
 function clearEditorIssue(){editorIssue=null;$('editorError').hidden=true;$('source').removeAttribute('aria-invalid');syncEditorHighlight();}
 function preflightCode(source){
  const rows=source.replace(/\r/g,'').split('\n'),stack=[];
- for(let i=0;i<rows.length;i++){let quote='';const row=rows[i];for(let j=0;j<row.length;j++){const c=row[j];if(quote){if(c==='\\'){j++;continue;}if(c===quote)quote='';continue;}if(c==='#')break;if(c==='"'||c==="'"){quote=c;continue;}if('(['.includes(c))stack.push({char:c,line:i+1});else if(')]'.includes(c)){const open=stack.pop();if(!open||(open.char==='('?')':']')!==c)throw Object.assign(Error('対応する開き括弧がありません: '+c),{line:i+1,help:'括弧の開き方と閉じ方を確認しましょう。',symbol:c});}}
+ for(let i=0;i<rows.length;i++){let quote='';const row=stripPythonComment(rows[i]);for(let j=0;j<row.length;j++){const c=row[j];if(quote){if(c==='\\'){j++;continue;}if(c===quote)quote='';continue;}if(c==='"'||c==="'"){quote=c;continue;}if('(['.includes(c))stack.push({char:c,line:i+1});else if(')]'.includes(c)){const open=stack.pop();if(!open||(open.char==='('?')':']')!==c)throw Object.assign(Error('対応する開き括弧がありません: '+c),{line:i+1,help:'括弧の開き方と閉じ方を確認しましょう。',symbol:c});}}
   if(quote)throw Object.assign(Error('文字列を閉じる引用符がありません'),{line:i+1,help:'文字を囲む引用符は、最初と最後を同じ記号にします。',symbol:quote});
-  const clean=row.trim();if(/^(if\s|elif\s|else\s*$|while\s|for\s)/.test(clean)&&!clean.endsWith(':')&&!clean.includes('#'))throw Object.assign(Error('行の最後の : がありません'),{line:i+1,help:'条件分岐や繰り返しの見出しの最後を確認しましょう。',symbol:':'});
+  const clean=row.trim();if(/^(if\s|elif\s|else\s*$|while\s|for\s)/.test(clean)&&!clean.endsWith(':'))throw Object.assign(Error('行の最後の : がありません'),{line:i+1,help:'条件分岐や繰り返しの見出しの最後を確認しましょう。',symbol:':'});
  }
  if(stack.length){const open=stack.at(-1),symbol=open.char==='('?')':']';throw Object.assign(Error('閉じ括弧 '+symbol+' がありません'),{line:open.line,help:'開いた括弧と、対応する閉じ括弧を確認しましょう。',symbol});}
 }

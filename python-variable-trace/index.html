@@ -792,6 +792,15 @@ function applyTraceLessonColumns(columns){
  for(const column of columns)addTraceTarget(column);
  traceTargetOrder=columns.map(traceTargetKey);
 }
+function numberSampleOptions(){
+ let index=0;
+ for(const option of $('sample').options){
+  if(!option.value)continue;
+  const title=option.dataset.title??option.textContent;
+  option.dataset.title=title;
+  option.textContent=(++index)+'. '+title;
+ }
+}
 function loadTraceSample(code,title,columns){
  $('source').value=code;
  currentFileName=title;
@@ -823,7 +832,8 @@ function mergeSharedTraceLessons(reply){
  group.replaceChildren(...Array.from(next,([key,item])=>{const option=document.createElement('option');option.value=key;option.textContent=item.title;return option;}));
  if(Array.from(select.options).some(option=>option.value===old))select.value=old;
  const initialLesson=next.get(builtInLessonKeys[0]);
- const originalTitle=builtInSampleOptions[0].textContent;
+ numberSampleOptions();
+ const originalTitle=builtInSampleOptions[0].dataset.title;
  const hasLocalColumns=extraTraceTargets.length||traceTargetOrder.length||hiddenTraceTargets.size||showTraceExecution;
  const initialChanged=initialLesson&&(initialLesson.code!==samples.basic||initialLesson.title!==originalTitle||initialLesson.columns!==null);
  if(initialChanged&&!hasLocalColumns&&steps===initialTraceSteps&&index===0&&$('source').value===samples.basic&&currentFileName===originalTitle){
@@ -868,7 +878,7 @@ function clearFileFeedback(){$('fileFeedback').className='file-feedback hidden';
 function compile(){hideCompletions();clearEditorIssue();try{preflightCode($('source').value);let result=buildSteps($('source').value);steps=result.trace;lines=result.raw;index=0;lastSource=$('source').value;message('✓ 解析完了。'+(steps.length-1)+'ステップで実行できます。','success');render()}catch(e){steps=[];lines=$('source').value.replace(/\r/g,'').split('\n');index=0;lastSource='';showEditorIssue(e);message('⚠ '+(editorIssue.line?editorIssue.line+'行目を確認してください。':'コードを確認してください。')+'コード欄の下にヒントを表示しています。','error');render()}}
 function render(){syncEditorHighlight();let s=steps[index]||{vars:{},changed:[],output:[],line:0,text:'開始前'};let next=steps[index+1];$('codeView').innerHTML=lines.map((line,i)=>`<div class="line ${s.line===i+1?'done':''} ${next&&next.line===i+1?'active':''} ${editorIssue&&editorIssue.line===i+1?'source-error':''}"><span class="num">${i+1}</span><span class="src">${syntaxLine(line)||' '}</span></div>`).join('');revealCodeLine();$('outputText').textContent=s.output.join('\n');renderGraphs(s.graphs||[]);$('executionOutput').classList.toggle('hidden',s.output.length===0&&!(s.graphs||[]).length);$('graphHelp').classList.toggle('hidden',!lines.some(line=>line.trim()==='import matplotlib.pyplot as plt'));let names=Object.keys(s.vars).sort();$('varsHead').innerHTML='<tr>'+names.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'</tr>';$('vars').innerHTML='<tr>'+names.map(k=>'<td class="'+(s.changed.includes(k)?'changedCell':'')+'">'+escapeHTML(format(s.vars[k]))+'</td>').join('')+'</tr>';$('emptyVars').classList.toggle('hidden',names.length>0);renderTraceTargets();let traceNames=traceDisplayColumns();$('traceHead').innerHTML='<tr><th>ステップ</th>'+traceNames.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'</tr>';$('history').innerHTML=steps.slice(1,index+1).map((t,i)=>'<tr class="'+(i+1===index?'current':'')+'"><td>'+(i+1)+'</td>'+traceNames.map(k=>traceTargetCell(t,steps[i],k)).join('')+'</tr>').join('');fitTraceColumns();$('prev').disabled=index===0;const canCompile=!editorIssue&&$('source').value.trim()&&$('source').value!==lastSource;$('next').disabled=!next&&!canCompile;$('all').disabled=!next&&!canCompile;$('position').textContent=editorIssue?'コードを確認してください':!steps.length?'':index+' / '+Math.max(0,steps.length-1)+' ステップ'+(next?'':' · 終了');}
 function step(){if($('source').value!==lastSource)compile();if(index<steps.length-1){index++;render()}}
-$('reset').addEventListener('click',compile);$('prev').addEventListener('click',()=>{if(index>0){index--;render()}});$('next').addEventListener('click',step);$('all').addEventListener('click',()=>{if($('source').value!==lastSource)compile();if(steps.length){index=steps.length-1;render()}});$('sample').addEventListener('change',()=>{const key=$('sample').value;if(!key)return;const title=$('sample').selectedOptions[0].textContent;$('sample').value='';loadTraceSample(samples[key],title,sharedTraceLessons.get(key)?.columns??null);});$('newCode').addEventListener('click',()=>{hideSaveChoices();hideCompletions();clearEditorIssue();clearFileFeedback();if($('source').value.trim()&&!confirm('新規作成しますか？ 現在のコードとトレース履歴は消去されます。'))return;currentFileName='';$('source').value='';updateOpenedName();$('openedName').focus();$('sample').selectedIndex=-1;steps=[];index=0;lines=[];lastSource='';$('source').focus();render();message('プログラム名を入力してから、Pythonコードを作成してください。');});function exportRows(){
+$('reset').addEventListener('click',compile);$('prev').addEventListener('click',()=>{if(index>0){index--;render()}});$('next').addEventListener('click',step);$('all').addEventListener('click',()=>{if($('source').value!==lastSource)compile();if(steps.length){index=steps.length-1;render()}});$('sample').addEventListener('change',()=>{const key=$('sample').value;if(!key)return;const title=$('sample').selectedOptions[0].dataset.title;$('sample').value='';loadTraceSample(samples[key],title,sharedTraceLessons.get(key)?.columns??null);});$('newCode').addEventListener('click',()=>{hideSaveChoices();hideCompletions();clearEditorIssue();clearFileFeedback();if($('source').value.trim()&&!confirm('新規作成しますか？ 現在のコードとトレース履歴は消去されます。'))return;currentFileName='';$('source').value='';updateOpenedName();$('openedName').focus();$('sample').selectedIndex=-1;steps=[];index=0;lines=[];lastSource='';$('source').focus();render();message('プログラム名を入力してから、Pythonコードを作成してください。');});function exportRows(){
  let names=traceDisplayColumns();
  let rows=[['ステップ',...names]];
  steps.slice(1,index+1).forEach((s,i)=>rows.push([String(i+1),...names.map(k=>traceTargetText(s,k))]));
@@ -1027,7 +1037,7 @@ $('fileInput').addEventListener('change',async(e)=>{
 });
 
 updateOpenedName();
-setupEditorAssist();observeTraceWidth();setupTraceTargets();$('source').value=samples.basic;compile();initialTraceSteps=steps;loadSharedTraceLessons();
+setupEditorAssist();observeTraceWidth();setupTraceTargets();$('source').value=samples.basic;compile();initialTraceSteps=steps;numberSampleOptions();loadSharedTraceLessons();
 })();
 </script>
 </body></html>

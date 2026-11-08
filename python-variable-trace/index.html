@@ -758,7 +758,11 @@ function traceTableColumnWidths(available,stepWidth,wanted,showContent){
  return [step,...widths,Math.max(1,available-step-widths.reduce((a,b)=>a+b,0))];
 }
 
-const sharedTraceLessons=new Map();let sharedTraceRevision=-1,sharedTraceLoading=false;
+const sharedTraceLessons=new Map();
+const builtInSampleOptions=Array.from($('sample').options).filter(option=>option.value);
+// Stable IDs match PythonTraceBuiltInExamples.gs. The first entry is the initial program.
+const builtInLessonKeys=builtInSampleOptions.map((_,index)=>'class:lesson-00000000-0000-0000-0000-00000000000'+(index+1));
+let sharedTraceRevision=-1,sharedTraceLoading=false,initialTraceSteps;
 function applyTraceLessonColumns(columns){
  resetTraceTargets();
  if(columns===null)return;
@@ -766,8 +770,15 @@ function applyTraceLessonColumns(columns){
  for(const column of columns)addTraceTarget(column);
  traceTargetOrder=columns.map(traceTargetKey);
 }
+function loadTraceSample(code,title,columns){
+ $('source').value=code;
+ currentFileName=title;
+ updateOpenedName();
+ compile();
+ if(steps.length){applyTraceLessonColumns(columns);render();}
+}
 function mergeSharedTraceLessons(reply){
- if(!reply||reply.ok!==true||!reply.data||!Number.isSafeInteger(reply.data.revision)||reply.data.revision<0||reply.data.revision<sharedTraceRevision||!Array.isArray(reply.data.items)||!reply.data.items.length||reply.data.items.length>30)return false;
+ if(!reply||reply.ok!==true||!reply.data||!Number.isSafeInteger(reply.data.revision)||reply.data.revision<0||reply.data.revision<sharedTraceRevision||!Array.isArray(reply.data.items)||!reply.data.items.length||reply.data.items.length>30+builtInLessonKeys.length)return false;
  const next=new Map();
  try{
   for(const item of reply.data.items){
@@ -776,12 +787,26 @@ function mergeSharedTraceLessons(reply){
    buildSteps(item.code);if(item.columns)item.columns.forEach(column=>expr(column,{},false));next.set('class:'+item.id,{title:item.title,code:item.code,columns:item.columns===null?null:[...item.columns]});
   }
  }catch{return false;}
+ const savedBuiltIns=builtInLessonKeys.filter(key=>next.has(key)).length;
+ if(savedBuiltIns>0&&savedBuiltIns!==builtInLessonKeys.length)return false;
+ const managedCatalog=savedBuiltIns===builtInLessonKeys.length;
  for(const key of sharedTraceLessons.keys())delete samples[key];
  sharedTraceLessons.clear();for(const [key,item] of next){sharedTraceLessons.set(key,item);samples[key]=item.code;}
  sharedTraceRevision=reply.data.revision;
  const select=$('sample'),old=select.value;let group=$('sharedTraceLessonGroup');if(!group){group=document.createElement('optgroup');group.id='sharedTraceLessonGroup';group.label='授業の例題';select.append(group);}
+ for(const option of builtInSampleOptions){
+  if(managedCatalog)option.remove();
+  else if(!option.isConnected)select.insertBefore(option,group);
+ }
  group.replaceChildren(...Array.from(next,([key,item])=>{const option=document.createElement('option');option.value=key;option.textContent=item.title;return option;}));
  if(Array.from(select.options).some(option=>option.value===old))select.value=old;
+ const initialLesson=next.get(builtInLessonKeys[0]);
+ const originalTitle=builtInSampleOptions[0].textContent;
+ const hasLocalColumns=extraTraceTargets.length||traceTargetOrder.length||hiddenTraceTargets.size||showTraceExecution;
+ const initialChanged=initialLesson&&(initialLesson.code!==samples.basic||initialLesson.title!==originalTitle||initialLesson.columns!==null);
+ if(initialChanged&&!hasLocalColumns&&steps===initialTraceSteps&&index===0&&$('source').value===samples.basic&&currentFileName===originalTitle){
+  loadTraceSample(initialLesson.code,initialLesson.title,initialLesson.columns);
+ }
  return true;
 }
 function loadSharedTraceLessons(){
@@ -821,7 +846,7 @@ function clearFileFeedback(){$('fileFeedback').className='file-feedback hidden';
 function compile(){hideCompletions();clearEditorIssue();try{preflightCode($('source').value);let result=buildSteps($('source').value);steps=result.trace;lines=result.raw;index=0;lastSource=$('source').value;message('✓ 解析完了。'+(steps.length-1)+'ステップで実行できます。','success');render()}catch(e){steps=[];lines=$('source').value.replace(/\r/g,'').split('\n');index=0;lastSource='';showEditorIssue(e);message('⚠ '+(editorIssue.line?editorIssue.line+'行目を確認してください。':'コードを確認してください。')+'コード欄の下にヒントを表示しています。','error');render()}}
 function render(){syncEditorHighlight();let s=steps[index]||{vars:{},changed:[],output:[],line:0,text:'開始前'};let next=steps[index+1];$('codeView').innerHTML=lines.map((line,i)=>`<div class="line ${s.line===i+1?'done':''} ${next&&next.line===i+1?'active':''} ${editorIssue&&editorIssue.line===i+1?'source-error':''}"><span class="num">${i+1}</span><span class="src">${syntaxLine(line)||' '}</span></div>`).join('');revealCodeLine();$('outputText').textContent=s.output.join('\n');renderGraphs(s.graphs||[]);$('executionOutput').classList.toggle('hidden',s.output.length===0&&!(s.graphs||[]).length);$('graphHelp').classList.toggle('hidden',!lines.some(line=>line.trim()==='import matplotlib.pyplot as plt'));let names=Object.keys(s.vars).sort();$('varsHead').innerHTML='<tr>'+names.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'</tr>';$('vars').innerHTML='<tr>'+names.map(k=>'<td class="'+(s.changed.includes(k)?'changedCell':'')+'">'+escapeHTML(format(s.vars[k]))+'</td>').join('')+'</tr>';$('emptyVars').classList.toggle('hidden',names.length>0);renderTraceTargets();let traceNames=traceDisplayColumns();$('traceHead').innerHTML='<tr><th>ステップ</th>'+traceNames.map(k=>'<th>'+escapeHTML(k)+'</th>').join('')+'</tr>';$('history').innerHTML=steps.slice(1,index+1).map((t,i)=>'<tr class="'+(i+1===index?'current':'')+'"><td>'+(i+1)+'</td>'+traceNames.map(k=>traceTargetCell(t,steps[i],k)).join('')+'</tr>').join('');fitTraceColumns();$('prev').disabled=index===0;const canCompile=!editorIssue&&$('source').value.trim()&&$('source').value!==lastSource;$('next').disabled=!next&&!canCompile;$('all').disabled=!next&&!canCompile;$('position').textContent=editorIssue?'コードを確認してください':!steps.length?'':index+' / '+Math.max(0,steps.length-1)+' ステップ'+(next?'':' · 終了');}
 function step(){if($('source').value!==lastSource)compile();if(index<steps.length-1){index++;render()}}
-$('reset').addEventListener('click',compile);$('prev').addEventListener('click',()=>{if(index>0){index--;render()}});$('next').addEventListener('click',step);$('all').addEventListener('click',()=>{if($('source').value!==lastSource)compile();if(steps.length){index=steps.length-1;render()}});$('sample').addEventListener('change',()=>{if(!$('sample').value)return;$('source').value=samples[$('sample').value];const selectedLesson=sharedTraceLessons.get($('sample').value);currentFileName=$('sample').selectedOptions[0].textContent;updateOpenedName();$('sample').value='';compile();if(steps.length){applyTraceLessonColumns(selectedLesson?selectedLesson.columns:null);render();}});$('newCode').addEventListener('click',()=>{hideSaveChoices();hideCompletions();clearEditorIssue();clearFileFeedback();if($('source').value.trim()&&!confirm('新規作成しますか？ 現在のコードとトレース履歴は消去されます。'))return;currentFileName='';$('source').value='';updateOpenedName();$('openedName').focus();$('sample').selectedIndex=-1;steps=[];index=0;lines=[];lastSource='';$('source').focus();render();message('プログラム名を入力してから、Pythonコードを作成してください。');});function exportRows(){
+$('reset').addEventListener('click',compile);$('prev').addEventListener('click',()=>{if(index>0){index--;render()}});$('next').addEventListener('click',step);$('all').addEventListener('click',()=>{if($('source').value!==lastSource)compile();if(steps.length){index=steps.length-1;render()}});$('sample').addEventListener('change',()=>{const key=$('sample').value;if(!key)return;const title=$('sample').selectedOptions[0].textContent;$('sample').value='';loadTraceSample(samples[key],title,sharedTraceLessons.get(key)?.columns??null);});$('newCode').addEventListener('click',()=>{hideSaveChoices();hideCompletions();clearEditorIssue();clearFileFeedback();if($('source').value.trim()&&!confirm('新規作成しますか？ 現在のコードとトレース履歴は消去されます。'))return;currentFileName='';$('source').value='';updateOpenedName();$('openedName').focus();$('sample').selectedIndex=-1;steps=[];index=0;lines=[];lastSource='';$('source').focus();render();message('プログラム名を入力してから、Pythonコードを作成してください。');});function exportRows(){
  let names=traceDisplayColumns();
  let rows=[['ステップ',...names]];
  steps.slice(1,index+1).forEach((s,i)=>rows.push([String(i+1),...names.map(k=>traceTargetText(s,k))]));
@@ -980,7 +1005,7 @@ $('fileInput').addEventListener('change',async(e)=>{
 });
 
 updateOpenedName();
-setupEditorAssist();observeTraceWidth();setupTraceTargets();$('source').value=samples.basic;compile();loadSharedTraceLessons();
+setupEditorAssist();observeTraceWidth();setupTraceTargets();$('source').value=samples.basic;compile();initialTraceSteps=steps;loadSharedTraceLessons();
 })();
 </script>
 </body></html>

@@ -184,9 +184,9 @@ dialog.trace-target-panel::backdrop{background:#061c2b66}
     <button type="button" id="newCode" class="primary innovia-button innovia-primary">＋ 新規</button>
     <button class="innovia-button" type="button" id="savePy">保存</button>
     <button class="innovia-button" type="button" id="openPy">開く</button>
-    <input id="openedName" class="opened-name" type="text" value="基本：代入と計算" placeholder="プログラム名を入力" aria-label="プログラム名（編集できます）" autocomplete="off">
-    <select id="sample" class="sample-dropdown" aria-label="例題を使う">
-      <option value="" selected>例題を使う ▾</option>
+    <input id="openedName" class="opened-name" type="text" placeholder="プログラム名を入力" aria-label="プログラム名（編集できます）" autocomplete="off">
+    <select id="sample" class="sample-dropdown" aria-label="例題を使う" disabled>
+      <option value="" selected>例題を読み込み中…</option>
       <option value="basic">基本：代入と計算</option>
       <option value="loop">繰り返し：for と range</option>
       <option value="branch">条件分岐：if / else</option>
@@ -1226,6 +1226,7 @@ function traceTableColumnWidths(available,stepWidth,wanted,showContent){
 
 const sharedTraceLessons=new Map();
 const builtInSampleOptions=Array.from($('sample').options).filter(option=>option.value);
+for(const option of builtInSampleOptions)option.remove();
 // Stable IDs match PythonTraceBuiltInExamples.gs. The first entry is the initial program.
 const builtInLessonKeys=builtInSampleOptions.map((_,index)=>'class:lesson-00000000-0000-0000-0000-00000000000'+(index+1));
 let sharedTraceRevision=-1,sharedTraceLoading=false,initialTraceSteps;
@@ -1253,7 +1254,7 @@ function loadTraceSample(code,title,columns){
  if(steps.length){applyTraceLessonColumns(columns);render();}
 }
 function mergeSharedTraceLessons(reply){
- if(!reply||reply.ok!==true||!reply.data||!Number.isSafeInteger(reply.data.revision)||reply.data.revision<0||reply.data.revision<sharedTraceRevision||!Array.isArray(reply.data.items)||!reply.data.items.length||reply.data.items.length>30+builtInLessonKeys.length)return false;
+ if(!reply||reply.ok!==true||!reply.data||!Number.isSafeInteger(reply.data.revision)||reply.data.revision<0||reply.data.revision<sharedTraceRevision||!Array.isArray(reply.data.items)||reply.data.items.length>30+builtInLessonKeys.length)return false;
  const next=new Map();
  try{
   for(const item of reply.data.items){
@@ -1263,8 +1264,10 @@ function mergeSharedTraceLessons(reply){
   }
  }catch{return false;}
  const savedBuiltIns=builtInLessonKeys.filter(key=>next.has(key)).length;
- if(savedBuiltIns>0&&savedBuiltIns!==builtInLessonKeys.length)return false;
- const managedCatalog=savedBuiltIns===builtInLessonKeys.length;
+ const reportedManaged=reply.data.managedBuiltIns;
+ if(reportedManaged!==undefined&&typeof reportedManaged!=='boolean')return false;
+ if(reportedManaged!==true&&savedBuiltIns>0&&savedBuiltIns!==builtInLessonKeys.length)return false;
+ const managedCatalog=reportedManaged===true||savedBuiltIns===builtInLessonKeys.length;
  for(const key of sharedTraceLessons.keys())delete samples[key];
  sharedTraceLessons.clear();for(const [key,item] of next){sharedTraceLessons.set(key,item);samples[key]=item.code;}
  sharedTraceRevision=reply.data.revision;
@@ -1275,13 +1278,15 @@ function mergeSharedTraceLessons(reply){
  }
  group.replaceChildren(...Array.from(next,([key,item])=>{const option=document.createElement('option');option.value=key;option.textContent=item.title;return option;}));
  if(Array.from(select.options).some(option=>option.value===old))select.value=old;
- const initialLesson=next.get(builtInLessonKeys[0]);
  numberSampleOptions();
- const originalTitle=builtInSampleOptions[0].dataset.title;
+ const hasVisibleExamples=select.options.length>1;
+ select.options[0].textContent=hasVisibleExamples?'例題を使う ▾':'表示中の例題はありません';
+ select.disabled=!hasVisibleExamples;
  const hasLocalColumns=extraTraceTargets.length||traceTargetOrder.length||hiddenTraceTargets.size||showTraceExecution;
- const initialChanged=initialLesson&&(initialLesson.code!==samples.basic||initialLesson.title!==originalTitle||initialLesson.columns!==null);
- if(initialChanged&&!hasLocalColumns&&steps===initialTraceSteps&&index===0&&$('source').value===samples.basic&&currentFileName===originalTitle){
-  loadTraceSample(initialLesson.code,initialLesson.title,initialLesson.columns);
+ if(hasVisibleExamples&&!hasLocalColumns&&steps===initialTraceSteps&&index===0&&!$('source').value&&!currentFileName){
+  const first=select.options[1];
+  const initialLesson=managedCatalog?next.get(builtInLessonKeys[0])||next.get(first.value):null;
+  loadTraceSample(initialLesson?.code??samples[first.value],initialLesson?.title??first.dataset.title,initialLesson?.columns??null);
  }
  return true;
 }
@@ -1290,7 +1295,10 @@ function loadSharedTraceLessons(){
  const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);const requestId=Array.from(bytes,value=>value.toString(16).padStart(2,'0')).join('');
  const link=document.querySelector('.catalog-return'),url=new URL(link.href);url.search='';url.searchParams.set('page','python-trace-examples');url.searchParams.set('requestId',requestId);
  const frame=document.createElement('iframe');frame.hidden=true;frame.title='共有例題の読み込み';frame.referrerPolicy='no-referrer';let timer;
- function finish(){clearTimeout(timer);window.removeEventListener('message',receive);frame.remove();sharedTraceLoading=false;}
+ function finish(){
+  clearTimeout(timer);window.removeEventListener('message',receive);frame.remove();sharedTraceLoading=false;
+  if(sharedTraceRevision<0)$('sample').options[0].textContent='例題を読み込めませんでした';
+ }
  function receive(event){
   let origin;try{origin=new URL(event.origin);}catch{return;}
   if(origin.protocol!=='https:'||!(origin.hostname==='script.google.com'||origin.hostname.endsWith('.googleusercontent.com')))return;
@@ -1508,7 +1516,7 @@ $('savePy').addEventListener('click',()=>{
  $('savePy').setAttribute('aria-expanded',String(showing));
 });
 $('cancelSave').addEventListener('click',hideSaveChoices);
-let currentFileName='基本：代入と計算';
+let currentFileName='';
 function safePyFileName(raw){let name=String(raw||'').trim().replace(/\.py$/i,'').replace(/[\\/:*?"<>|\x00-\x1F]/g,'_').replace(/[. ]+$/g,'');return(name||'python_program')+'.py'}
 function safePdfFileName(raw){let name=String(raw||'').trim().replace(/\.pdf$/i,'').replace(/[\\/:*?"<>|\x00-\x1F]/g,'_').replace(/[. ]+$/g,'');return(name||'python_program')+'.pdf'}
 $('choosePy').addEventListener('click',async()=>{
@@ -1557,7 +1565,7 @@ $('fileInput').addEventListener('change',async(e)=>{
 });
 
 updateOpenedName();
-setupEditorAssist();observeTraceWidth();setupTraceTargets();$('source').value=samples.basic;compile();initialTraceSteps=steps;numberSampleOptions();loadSharedTraceLessons();
+setupEditorAssist();observeTraceWidth();setupTraceTargets();updateOpenedName();compile();initialTraceSteps=steps;loadSharedTraceLessons();
 })();
 </script>
 </body></html>

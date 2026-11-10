@@ -589,9 +589,17 @@ function parseCode(source){
   if(!text)return {text,indent:0,line};
   const indent=code.match(/^ */)[0].length;
   if(code.includes('\t'))throw Error(line+'行目: インデントにはスペースを使ってください');
-  if(indent%4)throw Error(line+'行目: インデントはスペース4個単位です');
   return {text,indent,line};
  });
+ function suite(headerIndex,inFunction,inLoop){
+  const header=ls[headerIndex];
+  let start=headerIndex+1;
+  while(start<ls.length&&!ls[start].text)start++;
+  if(start===ls.length||ls[start].indent<=header.indent)throw Error(header.line+'行目: ブロックが空です');
+  const child=block(start,ls[start].indent,inFunction,inLoop);
+  if(!child.nodes.length)throw Error(header.line+'行目: ブロックが空です');
+  return child;
+ }
  function block(start,depth,inFunction=false,inLoop=false){let pos=start,nodes=[];
   while(pos<ls.length){let x=ls[pos],t=x.text;
    if(!t||t.startsWith('#')){pos++;continue}
@@ -610,8 +618,7 @@ function parseCode(source){
     node.kind='def';node.name=functionMatch[1];
     node.parameters=parameters?parameters.split(',').map(name=>name.trim()):[];
     if(node.parameters.some(name=>!/^[A-Za-z_]\w*$/.test(name))||new Set(node.parameters).size!==node.parameters.length)throw Error(x.line+'行目: 関数の引数を確認してください');
-    const child=block(pos+1,depth+4,true,false);
-    if(!child.nodes.length)throw Error(x.line+'行目: ブロックが空です');
+    const child=suite(pos,true,false);
     node.body=child.nodes;pos=child.pos;
    }else if(moduleMatch){
     if(depth!==0)throw Error(x.line+'行目: import は行頭から書いてください');
@@ -624,14 +631,14 @@ function parseCode(source){
     node.kind=t;pos++;
    }else if(control){
     node.kind=control[1];node.cond=control[2];
-    let child=block(pos+1,depth+4,inFunction,inLoop||node.kind==='while');if(!child.nodes.length)throw Error(x.line+'行目: ブロックが空です');
+    const child=suite(pos,inFunction,inLoop||node.kind==='while');
     node.body=child.nodes;pos=child.pos;
     if(node.kind==='if'){
      node.branches=[{cond:node.cond,body:node.body,line:x.line,text:t}];
      while(pos<ls.length){let nx=ls[pos];if(!nx.text||nx.text.startsWith('#')){pos++;continue}if(nx.indent!==depth)break;
       let elif=nx.text.match(/^elif\s+(.+):$/),isElse=nx.text==='else:';
       if(!elif&&!isElse)break;
-      let c=block(pos+1,depth+4,inFunction,inLoop);if(!c.nodes.length)throw Error(nx.line+'行目: ブロックが空です');
+      const c=suite(pos,inFunction,inLoop);
       node.branches.push({cond:isElse?null:elif[1],body:c.nodes,line:nx.line,text:nx.text});pos=c.pos;
       if(isElse)break;
      }
@@ -639,11 +646,10 @@ function parseCode(source){
    }else if(forMatch){
     node.kind='for';node.variable=forMatch[1];node.args=splitArgs(forMatch[2]);
     if(node.args.length<1||node.args.length>3)throw Error(x.line+'行目: rangeの引数は1～3個です');
-    let c=block(pos+1,depth+4,inFunction,true);if(!c.nodes.length)throw Error(x.line+'行目: ブロックが空です');node.body=c.nodes;pos=c.pos;
+    const child=suite(pos,inFunction,true);node.body=child.nodes;pos=child.pos;
    }else if(loopMatch){
     node.kind='forEach';node.variable=loopMatch[1];node.expression=loopMatch[2];
-    const child=block(pos+1,depth+4,inFunction,true);
-    if(!child.nodes.length)throw Error(x.line+'行目: ブロックが空です');
+    const child=suite(pos,inFunction,true);
     node.body=child.nodes;pos=child.pos;
    }else if(t==='import matplotlib.pyplot as plt'){
     node.kind='plotImport';pos++;
@@ -745,7 +751,8 @@ function buildSteps(source,inputs=[],seed=2463534242){
  const evaluate=(expression,env)=>expr(expression,env,true,runtime);
  const snapshot=env=>copyVars(env===globals?env:{...globals,...env});
  function record(line,text,previous,env){
-  if(trace.length>500)throw Error('500ステップを超えました。無限ループなどを確認してください');
+  const maxTraceSteps=1000;
+  if(trace.length>maxTraceSteps)throw Error(maxTraceSteps+'ステップを超えました。繰り返し回数を確認してください');
   const vars=snapshot(env);
   const changed=Object.keys(vars).filter(key=>!same(vars[key],previous[key]));
   trace.push({line,text,vars,output:[...output],graphs:[...graphs],changed});
@@ -982,7 +989,7 @@ function issueDetails(error){
  let raw=error.message.replace(/^\d+行目:\s*/,''),help=error.help||'表示された行と、その前後の書き方を確認しましょう。',symbol=error.symbol||'',focus='',example='';
  if(/未定義の変数:/.test(raw)){const name=raw.split('未定義の変数: ')[1];raw='変数「'+name+'」の値がまだ決まっていません。';help='使う前に値を代入したか、名前のつづりを確認してください。大文字・小文字も区別されます。';focus=name;}
  else if(/ブロックが空/.test(raw)){raw='この行の下に、実行する処理を書いてください。';help='下の行の先頭をスペース4個分下げて書きます。';focus='次の行・スペース4個';}
- else if(/インデント/.test(raw)){raw='行の先頭の空白を確認してください。';help='条件や繰り返しの中では、先頭をスペース4個分下げます。Tabキーでも入力できます。';focus='スペース4個';}
+ else if(/インデント/.test(raw)){raw='行の先頭の空白を確認してください。';help='同じまとまりの行は、先頭の空白の数をそろえます。';focus='字下げ';}
  else if(/0で割る/.test(raw)){raw='割る数が 0 になっています。';help='割り算の右側の値や、その変数への代入を確認してください。';focus='割る数';}
  else if(/対応していない文/.test(raw)){raw='このアプリでは、この書き方を実行できません。';const call=sourceLine.trim().match(/^([A-Za-z_]\w*)\s*\(/);if(call&&/^pr(?:i?n?t?)?$/.test(call[1])){help='画面に表示する命令のつづりを確認しましょう。';focus='print';example='print(値)';}else{help='入力候補や例題と見比べてください。';}}
  else if(/plt\.|グラフ|リスト|x と y|y には|折れ線/.test(raw))help='グラフの例題と見比べ、リストの個数・値・命令の順番を確認しましょう。';
